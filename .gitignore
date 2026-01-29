@@ -1,0 +1,12 @@
+# Saved designs (optional API)
+data/designs/*.json
+data/designs/*.png
+!data/designs/.gitkeep
+
+# OS / editor
+.DS_Store
+Thumbs.db
+*.swp
+*.swo
+.idea
+.vscode

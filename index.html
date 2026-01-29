@@ -1,0 +1,298 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta name="description" content="Free QR Code Generator - Create customizable QR codes with logos, colors, and export to PNG, SVG, PDF.">
+  <title>QR Code Generator | Customizable & Free</title>
+  <link rel="stylesheet" href="css/styles.css">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=DM+Sans:ital,opsz,wght@0,9..40,400;0,9..40,500;0,9..40,600;0,9..40,700&display=swap" rel="stylesheet">
+</head>
+<body>
+  <div class="app-wrapper">
+    <header class="header" role="banner">
+      <div class="header-inner">
+        <h1 class="logo">QR Code Generator</h1>
+        <p class="tagline">Create customizable QR codes — free, no sign-up</p>
+        <div class="header-actions">
+          <button type="button" id="dark-mode-toggle" class="btn-icon" aria-label="Toggle dark mode" title="Toggle dark mode">
+            <span class="icon-sun" aria-hidden="true">☀</span>
+            <span class="icon-moon" aria-hidden="true">🌙</span>
+          </button>
+          <button type="button" id="reset-btn" class="btn btn-secondary">Reset</button>
+          <button type="button" id="undo-btn" class="btn btn-secondary" title="Undo last change">Undo</button>
+        </div>
+      </div>
+    </header>
+
+    <main class="main" role="main">
+      <!-- Input Section -->
+      <section class="card section-input" aria-labelledby="input-heading">
+        <h2 id="input-heading" class="section-title">Content</h2>
+        <p class="content-type-label">What do you want to encode?</p>
+        <div class="content-type-tabs" id="content-type-tabs" role="tablist" aria-label="Content type">
+          <button type="button" class="content-type-btn active" data-type="url" role="tab" aria-selected="true" title="Website URL">URL</button>
+          <button type="button" class="content-type-btn" data-type="text" role="tab" aria-selected="false" title="Plain text">Text</button>
+          <button type="button" class="content-type-btn" data-type="phone" role="tab" title="Phone number">Phone</button>
+          <button type="button" class="content-type-btn" data-type="sms" role="tab" title="SMS message">SMS</button>
+          <button type="button" class="content-type-btn" data-type="email" role="tab" title="Email">Email</button>
+          <button type="button" class="content-type-btn" data-type="wifi" role="tab" title="Wi‑Fi network">WiFi</button>
+          <button type="button" class="content-type-btn" data-type="vcard" role="tab" title="Contact (vCard)">vCard</button>
+          <button type="button" class="content-type-btn" data-type="location" role="tab" title="Location">Location</button>
+          <button type="button" class="content-type-btn" data-type="event" role="tab" title="Event">Event</button>
+        </div>
+
+        <!-- URL -->
+        <div class="content-panel active" id="panel-url" data-content-type="url" role="tabpanel">
+          <label for="content-url">Website URL</label>
+          <input type="url" id="content-url" placeholder="https://example.com" aria-label="Website URL">
+        </div>
+        <!-- Text -->
+        <div class="content-panel" id="panel-text" data-content-type="text" role="tabpanel" hidden>
+          <label for="content-text">Text</label>
+          <textarea id="content-text" rows="3" placeholder="Enter plain text..." maxlength="2000" aria-label="Plain text"></textarea>
+        </div>
+        <!-- Phone -->
+        <div class="content-panel" id="panel-phone" data-content-type="phone" role="tabpanel" hidden>
+          <label for="content-phone">Phone number</label>
+          <input type="tel" id="content-phone" placeholder="+1 234 567 8900" aria-label="Phone number">
+        </div>
+        <!-- SMS -->
+        <div class="content-panel" id="panel-sms" data-content-type="sms" role="tabpanel" hidden>
+          <label for="content-sms-number">Phone number</label>
+          <input type="tel" id="content-sms-number" placeholder="+1 234 567 8900" aria-label="SMS recipient">
+          <label for="content-sms-body">Message (optional)</label>
+          <textarea id="content-sms-body" rows="2" placeholder="Pre-filled message..." maxlength="500" aria-label="SMS message"></textarea>
+        </div>
+        <!-- Email -->
+        <div class="content-panel" id="panel-email" data-content-type="email" role="tabpanel" hidden>
+          <label for="content-email">Email address</label>
+          <input type="email" id="content-email" placeholder="you@example.com" aria-label="Email">
+          <label for="content-email-subject">Subject (optional)</label>
+          <input type="text" id="content-email-subject" placeholder="Subject" aria-label="Email subject">
+          <label for="content-email-body">Body (optional)</label>
+          <textarea id="content-email-body" rows="2" placeholder="Message body..." maxlength="1000" aria-label="Email body"></textarea>
+        </div>
+        <!-- WiFi -->
+        <div class="content-panel" id="panel-wifi" data-content-type="wifi" role="tabpanel" hidden>
+          <label for="content-wifi-ssid">Network name (SSID)</label>
+          <input type="text" id="content-wifi-ssid" placeholder="MyNetwork" aria-label="WiFi network name">
+          <label for="content-wifi-pass">Password</label>
+          <input type="text" id="content-wifi-pass" placeholder="Password" aria-label="WiFi password">
+          <label for="content-wifi-type">Encryption</label>
+          <select id="content-wifi-type" aria-label="WiFi encryption">
+            <option value="WPA">WPA/WPA2</option>
+            <option value="WEP">WEP</option>
+            <option value="nopass">None</option>
+          </select>
+        </div>
+        <!-- vCard -->
+        <div class="content-panel" id="panel-vcard" data-content-type="vcard" role="tabpanel" hidden>
+          <label for="content-vcard-name">Full name</label>
+          <input type="text" id="content-vcard-name" placeholder="John Doe" aria-label="Contact name">
+          <label for="content-vcard-tel">Phone</label>
+          <input type="tel" id="content-vcard-tel" placeholder="+1 234 567 8900" aria-label="Contact phone">
+          <label for="content-vcard-email">Email</label>
+          <input type="email" id="content-vcard-email" placeholder="john@example.com" aria-label="Contact email">
+          <label for="content-vcard-org">Organization (optional)</label>
+          <input type="text" id="content-vcard-org" placeholder="Company" aria-label="Organization">
+        </div>
+        <!-- Location -->
+        <div class="content-panel" id="panel-location" data-content-type="location" role="tabpanel" hidden>
+          <label for="content-lat">Latitude</label>
+          <input type="text" id="content-lat" placeholder="40.7128" aria-label="Latitude">
+          <label for="content-lng">Longitude</label>
+          <input type="text" id="content-lng" placeholder="-74.0060" aria-label="Longitude">
+          <p class="hint">Or use a maps link: paste URL in Text type.</p>
+        </div>
+        <!-- Event -->
+        <div class="content-panel" id="panel-event" data-content-type="event" role="tabpanel" hidden>
+          <label for="content-event-title">Event title</label>
+          <input type="text" id="content-event-title" placeholder="Meeting" aria-label="Event title">
+          <label for="content-event-start">Start (date/time)</label>
+          <input type="datetime-local" id="content-event-start" aria-label="Event start">
+          <label for="content-event-end">End (date/time)</label>
+          <input type="datetime-local" id="content-event-end" aria-label="Event end">
+          <label for="content-event-location">Location (optional)</label>
+          <input type="text" id="content-event-location" placeholder="Address or place" aria-label="Event location">
+          <label for="content-event-desc">Description (optional)</label>
+          <textarea id="content-event-desc" rows="2" maxlength="500" aria-label="Event description"></textarea>
+        </div>
+
+        <p id="input-error" class="error-message" role="alert" aria-live="polite" hidden></p>
+        <button type="button" id="generate-btn" class="btn btn-primary btn-generate">Generate QR Code</button>
+      </section>
+
+      <div class="layout-two">
+        <!-- Customization Panel -->
+        <aside class="card panel-customize" aria-labelledby="customize-heading">
+          <h2 id="customize-heading" class="section-title">Customize</h2>
+
+          <!-- Size & resolution -->
+          <fieldset class="fieldset">
+            <legend>Size & quality</legend>
+            <div class="row">
+              <label for="qr-size">Size (px)</label>
+              <input type="number" id="qr-size" min="128" max="1024" value="300" step="32">
+            </div>
+            <div class="row">
+              <label for="qr-ec">Error correction</label>
+              <select id="qr-ec" aria-describedby="ec-desc">
+                <option value="L">L — Low (~7%)</option>
+                <option value="M">M — Medium (~15%)</option>
+                <option value="Q" selected>Q — Quartile (~25%)</option>
+                <option value="H">H — High (~30%)</option>
+              </select>
+              <span id="ec-desc" class="hint">Higher = more durable, larger code</span>
+            </div>
+          </fieldset>
+
+          <!-- Colors -->
+          <fieldset class="fieldset">
+            <legend>Colors</legend>
+            <div class="row">
+              <label for="fg-color">Foreground</label>
+              <input type="color" id="fg-color" value="#1a1a2e" aria-label="Foreground color">
+              <input type="text" id="fg-color-text" value="#1a1a2e" class="color-text" maxlength="20">
+            </div>
+            <div class="row">
+              <label for="bg-color">Background</label>
+              <input type="color" id="bg-color" value="#ffffff" aria-label="Background color">
+              <input type="text" id="bg-color-text" value="#ffffff" class="color-text" maxlength="20">
+            </div>
+            <div class="row checkbox-row">
+              <input type="checkbox" id="transparent-bg" aria-label="Transparent background">
+              <label for="transparent-bg">Transparent background</label>
+            </div>
+            <div class="row">
+              <label>Gradient (foreground)</label>
+              <div class="gradient-controls">
+                <input type="checkbox" id="use-gradient" aria-label="Use gradient for foreground">
+                <label for="use-gradient">Use gradient</label>
+                <div class="gradient-inputs">
+                  <input type="color" id="gradient-from" value="#6366f1" aria-label="Gradient start">
+                  <input type="color" id="gradient-to" value="#8b5cf6" aria-label="Gradient end">
+                  <select id="gradient-rotation" aria-label="Gradient angle">
+                    <option value="0">0°</option>
+                    <option value="45">45°</option>
+                    <option value="90">90°</option>
+                    <option value="135">135°</option>
+                    <option value="180">180°</option>
+                  </select>
+                </div>
+              </div>
+            </div>
+          </fieldset>
+
+          <!-- Corner style -->
+          <fieldset class="fieldset">
+            <legend>Corner style</legend>
+            <div class="row">
+              <label for="corner-square">Corner squares</label>
+              <select id="corner-square" aria-label="Corner square style">
+                <option value="square">Square</option>
+                <option value="extra-rounded">Extra rounded</option>
+                <option value="dot">Dot</option>
+                <option value="rounded">Rounded</option>
+                <option value="dots">Dots</option>
+                <option value="classy">Classy</option>
+                <option value="classy-rounded">Classy rounded</option>
+              </select>
+            </div>
+            <div class="row">
+              <label for="corner-dot">Corner dots</label>
+              <select id="corner-dot" aria-label="Corner dot style">
+                <option value="square">Square</option>
+                <option value="dot">Dot</option>
+                <option value="rounded">Rounded</option>
+                <option value="dots">Dots</option>
+                <option value="classy">Classy</option>
+                <option value="classy-rounded">Classy rounded</option>
+                <option value="extra-rounded">Extra rounded</option>
+              </select>
+            </div>
+          </fieldset>
+
+          <!-- Dot style -->
+          <fieldset class="fieldset">
+            <legend>Dot style</legend>
+            <div class="row">
+              <label for="dot-style">Style</label>
+              <select id="dot-style" aria-label="QR dot style">
+                <option value="square">Square</option>
+                <option value="rounded">Rounded</option>
+                <option value="dots">Dots</option>
+                <option value="classy">Classy</option>
+                <option value="classy-rounded">Classy rounded</option>
+                <option value="extra-rounded">Extra rounded</option>
+              </select>
+            </div>
+          </fieldset>
+
+          <!-- Label -->
+          <fieldset class="fieldset">
+            <legend>Label</legend>
+            <div class="row">
+              <label for="label-text">Text below QR</label>
+              <input type="text" id="label-text" placeholder="Optional label" maxlength="80" aria-label="Label text below QR code">
+            </div>
+            <div class="row checkbox-row">
+              <input type="checkbox" id="label-inside" aria-label="Show label inside QR area">
+              <label for="label-inside">Show label inside QR area</label>
+            </div>
+          </fieldset>
+
+          <!-- Logo -->
+          <fieldset class="fieldset">
+            <legend>Logo / image</legend>
+            <div class="row">
+              <label for="logo-upload">Center image</label>
+              <input type="file" id="logo-upload" accept="image/*" aria-label="Upload logo for center of QR code">
+            </div>
+            <div class="row logo-actions" id="logo-actions" hidden>
+              <button type="button" id="remove-logo" class="btn btn-small">Remove logo</button>
+            </div>
+          </fieldset>
+        </aside>
+
+        <!-- Preview & Export -->
+        <section class="card panel-preview" aria-labelledby="preview-heading">
+          <h2 id="preview-heading" class="section-title">Preview</h2>
+          <div class="preview-wrap" id="preview-wrap">
+            <div id="qr-container" class="qr-container" aria-live="polite"></div>
+            <p id="preview-label" class="preview-label" hidden></p>
+            <p id="preview-empty" class="preview-empty">Enter URL or text above to generate</p>
+          </div>
+
+          <div class="export-section">
+            <h3 class="export-title">Export</h3>
+            <div class="export-buttons">
+              <button type="button" id="export-png" class="btn btn-primary" disabled>Download PNG</button>
+              <button type="button" id="export-svg" class="btn btn-primary" disabled>Download SVG</button>
+              <button type="button" id="export-pdf" class="btn btn-primary" disabled>Download PDF</button>
+              <button type="button" id="copy-clipboard" class="btn btn-secondary" disabled title="Copy image to clipboard">Copy image</button>
+              <button type="button" id="print-btn" class="btn btn-secondary" disabled>Print</button>
+              <button type="button" id="save-design-btn" class="btn btn-secondary" disabled title="Save design (requires server)">Save design</button>
+            </div>
+            <p id="export-message" class="export-message" role="status" aria-live="polite" hidden></p>
+          </div>
+        </section>
+      </div>
+    </main>
+
+    <footer class="footer" role="contentinfo">
+      <p>QR Code Generator — no account required, no external APIs. Runs entirely in your browser.</p>
+    </footer>
+  </div>
+
+  <!-- qr-code-styling from CDN -->
+  <script src="https://unpkg.com/qr-code-styling@1.6.0-rc.1/lib/qr-code-styling.js"></script>
+  <!-- jsPDF for PDF export (optional, loaded dynamically or via CDN) -->
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+  <script src="js/qr-generator.js"></script>
+  <script src="js/content-types.js"></script>
+  <script src="js/app.js"></script>
+</body>
+</html>
