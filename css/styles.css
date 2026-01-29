@@ -198,6 +198,79 @@ body {
 .section-input {
   margin-bottom: 24px;
 }
+.content-type-label {
+  font-size: 0.95rem;
+  color: var(--text-muted);
+  margin: 0 0 12px;
+}
+.content-type-tabs {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  margin-bottom: 20px;
+}
+.content-type-btn {
+  padding: 8px 14px;
+  font-family: var(--font);
+  font-size: 0.85rem;
+  font-weight: 500;
+  border: 1px solid var(--border);
+  border-radius: var(--radius-sm);
+  background: var(--surface);
+  color: var(--text);
+  cursor: pointer;
+  transition: background 0.2s, border-color 0.2s, color 0.2s;
+}
+.content-type-btn:hover {
+  background: var(--border);
+  border-color: var(--text-muted);
+}
+.content-type-btn.active {
+  background: var(--primary);
+  border-color: var(--primary);
+  color: #fff;
+}
+.content-panel {
+  margin-bottom: 16px;
+}
+.content-panel[hidden] {
+  display: none;
+}
+.content-panel label {
+  display: block;
+  font-weight: 500;
+  font-size: 0.9rem;
+  margin: 12px 0 6px;
+  color: var(--text);
+}
+.content-panel label:first-child {
+  margin-top: 0;
+}
+.content-panel input[type="text"],
+.content-panel input[type="url"],
+.content-panel input[type="tel"],
+.content-panel input[type="email"],
+.content-panel input[type="datetime-local"],
+.content-panel select,
+.content-panel textarea {
+  width: 100%;
+  padding: 10px 12px;
+  font-family: var(--font);
+  font-size: 0.95rem;
+  border: 1px solid var(--border);
+  border-radius: var(--radius-sm);
+  background: var(--surface);
+  color: var(--text);
+}
+.content-panel textarea {
+  resize: vertical;
+  min-height: 60px;
+}
+.content-panel .hint {
+  font-size: 0.8rem;
+  color: var(--text-muted);
+  margin-top: 6px;
+}
 .input-group {
   position: relative;
 }

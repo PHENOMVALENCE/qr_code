@@ -243,7 +243,29 @@
   }
 
   function resetForm() {
-    if (el.qrData) el.qrData.value = '';
+    // Reset content type to URL and clear all content inputs
+    var tabs = document.getElementById('content-type-tabs');
+    if (tabs) {
+      tabs.querySelectorAll('.content-type-btn').forEach(function (b) {
+        b.classList.remove('active');
+        b.setAttribute('aria-selected', 'false');
+        if (b.getAttribute('data-type') === 'url') {
+          b.classList.add('active');
+          b.setAttribute('aria-selected', 'true');
+        }
+      });
+    }
+    document.querySelectorAll('.content-panel').forEach(function (panel) {
+      panel.hidden = panel.getAttribute('data-content-type') !== 'url';
+      panel.classList.toggle('active', panel.getAttribute('data-content-type') === 'url');
+    });
+    contentInputIds.forEach(function (item) {
+      var node = document.getElementById(item.id);
+      if (node) {
+        if (item.id === 'content-wifi-type') node.value = 'WPA';
+        else node.value = '';
+      }
+    });
     if (el.qrSize) el.qrSize.value = '300';
     if (el.qrEc) el.qrEc.value = 'Q';
     if (el.fgColor) el.fgColor.value = '#1a1a2e';
@@ -348,12 +370,72 @@
     }
   }
 
+  // Content type tabs: switch panel and active tab
+  function bindContentTypeTabs() {
+    el.contentTypeContainer = document.getElementById('content-type-tabs');
+    if (!el.contentTypeContainer) return;
+    var panels = document.querySelectorAll('.content-panel');
+    el.contentTypeContainer.querySelectorAll('.content-type-btn').forEach(function (btn) {
+      btn.addEventListener('click', function () {
+        var type = btn.getAttribute('data-type');
+        el.contentTypeContainer.querySelectorAll('.content-type-btn').forEach(function (b) {
+          b.classList.remove('active');
+          b.setAttribute('aria-selected', 'false');
+        });
+        btn.classList.add('active');
+        btn.setAttribute('aria-selected', 'true');
+        panels.forEach(function (panel) {
+          var isActive = panel.getAttribute('data-content-type') === type;
+          panel.hidden = !isActive;
+          panel.classList.toggle('active', isActive);
+        });
+        refreshQR();
+      });
+    });
+  }
+
+  // Refs for content-type inputs (used by ContentTypes.buildContentData)
+  var contentInputIds = [
+    { id: 'content-url', key: 'contentUrl' },
+    { id: 'content-text', key: 'contentText' },
+    { id: 'content-phone', key: 'contentPhone' },
+    { id: 'content-sms-number', key: 'contentSmsNumber' },
+    { id: 'content-sms-body', key: 'contentSmsBody' },
+    { id: 'content-email', key: 'contentEmail' },
+    { id: 'content-email-subject', key: 'contentEmailSubject' },
+    { id: 'content-email-body', key: 'contentEmailBody' },
+    { id: 'content-wifi-ssid', key: 'contentWifiSsid' },
+    { id: 'content-wifi-pass', key: 'contentWifiPass' },
+    { id: 'content-wifi-type', key: 'contentWifiType' },
+    { id: 'content-vcard-name', key: 'contentVcardName' },
+    { id: 'content-vcard-tel', key: 'contentVcardTel' },
+    { id: 'content-vcard-email', key: 'contentVcardEmail' },
+    { id: 'content-vcard-org', key: 'contentVcardOrg' },
+    { id: 'content-lat', key: 'contentLat' },
+    { id: 'content-lng', key: 'contentLng' },
+    { id: 'content-event-title', key: 'contentEventTitle' },
+    { id: 'content-event-start', key: 'contentEventStart' },
+    { id: 'content-event-end', key: 'contentEventEnd' },
+    { id: 'content-event-location', key: 'contentEventLocation' },
+    { id: 'content-event-desc', key: 'contentEventDesc' }
+  ];
+
+  function bindContentInputs() {
+    contentInputIds.forEach(function (item) {
+      var node = document.getElementById(item.id);
+      if (node) {
+        el[item.key] = node;
+        node.addEventListener('input', refreshQR);
+        node.addEventListener('change', refreshQR);
+      }
+    });
+  }
+
   function init() {
     el.qrContainer = document.getElementById('qr-container');
     el.previewEmpty = document.getElementById('preview-empty');
     el.previewLabel = document.getElementById('preview-label');
     el.inputError = document.getElementById('input-error');
-    el.charCount = document.getElementById('char-count');
     el.exportMessage = document.getElementById('export-message');
     el.exportPng = document.getElementById('export-png');
     el.exportSvg = document.getElementById('export-svg');
@@ -370,7 +452,8 @@
     el.generateBtn = document.getElementById('generate-btn');
 
     bindInputs();
-    updateCharCount();
+    bindContentTypeTabs();
+    bindContentInputs();
     initDarkMode();
 
     if (el.darkModeToggle) el.darkModeToggle.addEventListener('click', toggleDarkMode);

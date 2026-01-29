@@ -96,12 +96,12 @@
   function buildEvent(title, startDt, endDt, location, desc) {
     var t = (title || '').trim();
     if (!t) return '';
-    var lines = ['BEGIN:VEVENT', 'SUMMARY:' + t];
+    var lines = ['BEGIN:VCALENDAR', 'VERSION:2.0', 'BEGIN:VEVENT', 'SUMMARY:' + t];
     if ((startDt || '').trim()) lines.push('DTSTART:' + formatIcalDate(startDt.trim()));
     if ((endDt || '').trim()) lines.push('DTEND:' + formatIcalDate(endDt.trim()));
     if ((location || '').trim()) lines.push('LOCATION:' + (location || '').trim());
     if ((desc || '').trim()) lines.push('DESCRIPTION:' + (desc || '').trim());
-    lines.push('END:VEVENT');
+    lines.push('END:VEVENT', 'END:VCALENDAR');
     return lines.join('\n');
   }
 
