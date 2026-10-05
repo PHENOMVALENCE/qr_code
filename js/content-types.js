@@ -1,13 +1,11 @@
 /**
- * Content types for QR Code Generator
- * Builds the encoded string and validates input for each type (URL, Phone, SMS, WiFi, vCard, etc.).
+ * Content types for QR Studio.
+ * Builds encoded strings and validates input for URL, text, phone, SMS,
+ * WhatsApp, email, Wi-Fi, vCard, location and event QR codes.
  */
 (function (global) {
   'use strict';
 
-  /**
-   * Build encoded string for URL type. Ensures scheme if missing.
-   */
   function buildUrl(value) {
     var v = (value || '').trim();
     if (!v) return '';
@@ -15,20 +13,22 @@
     return v;
   }
 
-  /**
-   * Build tel: URI for phone.
-   */
+  function cleanPhone(value) {
+    return (value || '').trim().replace(/[^0-9+]/g, '');
+  }
+
+  function digitsOnly(value) {
+    return (value || '').replace(/\D/g, '');
+  }
+
   function buildPhone(value) {
-    var v = (value || '').trim().replace(/\s/g, '');
+    var v = cleanPhone(value);
     if (!v) return '';
     return 'tel:' + v;
   }
 
-  /**
-   * Build SMS URI (smsto: for pre-filled body, sms: for number only).
-   */
   function buildSms(number, body) {
-    var num = (number || '').trim().replace(/\s/g, '');
+    var num = cleanPhone(number);
     if (!num) return '';
     var b = (body || '').trim();
     if (b) return 'smsto:' + num + ':' + b;
@@ -36,8 +36,18 @@
   }
 
   /**
-   * Build mailto: URI.
+   * Build an official WhatsApp click-to-chat URL.
+   * wa.me requires an international number without +, spaces or punctuation.
    */
+  function buildWhatsapp(number, message) {
+    var num = digitsOnly(number);
+    if (!num) return '';
+    var url = 'https://wa.me/' + num;
+    var msg = (message || '').trim();
+    if (msg) url += '?text=' + encodeURIComponent(msg);
+    return url;
+  }
+
   function buildEmail(email, subject, body) {
     var e = (email || '').trim();
     if (!e) return '';
@@ -49,9 +59,6 @@
     return url;
   }
 
-  /**
-   * Build WiFi config string. Format: WIFI:T:WPA;S:ssid;P:password;;
-   */
   function buildWifi(ssid, password, enc) {
     var s = (ssid || '').trim();
     if (!s) return '';
@@ -63,26 +70,28 @@
   }
 
   function escapeWifi(s) {
-    return s.replace(/\\/g, '\\\\').replace(/;/g, '\\;').replace(/"/g, '\\"').replace(/,/g, '\\,');
+    return s.replace(/\\/g, '\\\\').replace(/;/g, '\\;').replace(/"/g, '\\"').replace(/,/g, '\\,').replace(/:/g, '\\:');
   }
 
-  /**
-   * Build vCard 3.0 string.
-   */
+  function escapeIcal(value) {
+    return (value || '')
+      .replace(/\\/g, '\\\\')
+      .replace(/\n/g, '\\n')
+      .replace(/,/g, '\\,')
+      .replace(/;/g, '\\;');
+  }
+
   function buildVcard(name, tel, email, org) {
     var n = (name || '').trim();
     if (!n) return '';
-    var lines = ['BEGIN:VCARD', 'VERSION:3.0', 'FN:' + n, 'N:' + n];
-    if ((tel || '').trim()) lines.push('TEL:' + (tel || '').trim().replace(/\s/g, ''));
+    var lines = ['BEGIN:VCARD', 'VERSION:3.0', 'FN:' + escapeIcal(n), 'N:' + escapeIcal(n)];
+    if ((tel || '').trim()) lines.push('TEL:' + cleanPhone(tel));
     if ((email || '').trim()) lines.push('EMAIL:' + (email || '').trim());
-    if ((org || '').trim()) lines.push('ORG:' + (org || '').trim());
+    if ((org || '').trim()) lines.push('ORG:' + escapeIcal((org || '').trim()));
     lines.push('END:VCARD');
     return lines.join('\n');
   }
 
-  /**
-   * Build geo: URI for location.
-   */
   function buildLocation(lat, lng) {
     var la = parseFloat((lat || '').trim(), 10);
     var lo = parseFloat((lng || '').trim(), 10);
@@ -90,17 +99,14 @@
     return 'geo:' + la + ',' + lo;
   }
 
-  /**
-   * Build simple event text (iCal SUMMARY + DTSTART + DTEND + LOCATION + DESCRIPTION).
-   */
   function buildEvent(title, startDt, endDt, location, desc) {
     var t = (title || '').trim();
     if (!t) return '';
-    var lines = ['BEGIN:VCALENDAR', 'VERSION:2.0', 'BEGIN:VEVENT', 'SUMMARY:' + t];
+    var lines = ['BEGIN:VCALENDAR', 'VERSION:2.0', 'BEGIN:VEVENT', 'SUMMARY:' + escapeIcal(t)];
     if ((startDt || '').trim()) lines.push('DTSTART:' + formatIcalDate(startDt.trim()));
     if ((endDt || '').trim()) lines.push('DTEND:' + formatIcalDate(endDt.trim()));
-    if ((location || '').trim()) lines.push('LOCATION:' + (location || '').trim());
-    if ((desc || '').trim()) lines.push('DESCRIPTION:' + (desc || '').trim());
+    if ((location || '').trim()) lines.push('LOCATION:' + escapeIcal((location || '').trim()));
+    if ((desc || '').trim()) lines.push('DESCRIPTION:' + escapeIcal((desc || '').trim()));
     lines.push('END:VEVENT', 'END:VCALENDAR');
     return lines.join('\n');
   }
@@ -114,17 +120,11 @@
       pad(d.getUTCHours()) + pad(d.getUTCMinutes()) + pad(d.getUTCSeconds()) + 'Z';
   }
 
-  /**
-   * Get current content type from UI (from active tab).
-   */
   function getCurrentType(el) {
     var btn = el.contentTypeContainer && el.contentTypeContainer.querySelector('.content-type-btn.active');
     return (btn && btn.getAttribute('data-type')) || 'url';
   }
 
-  /**
-   * Build encoded data string from current type and form values. el = refs to content inputs.
-   */
   function buildContentData(el, contentType) {
     var type = contentType || getCurrentType(el);
     switch (type) {
@@ -138,6 +138,11 @@
         return buildSms(
           el.contentSmsNumber && el.contentSmsNumber.value,
           el.contentSmsBody && el.contentSmsBody.value
+        );
+      case 'whatsapp':
+        return buildWhatsapp(
+          el.contentWhatsappNumber && el.contentWhatsappNumber.value,
+          el.contentWhatsappMessage && el.contentWhatsappMessage.value
         );
       case 'email':
         return buildEmail(
@@ -176,26 +181,72 @@
     }
   }
 
-  /**
-   * Validate current type and return { valid: boolean, message?: string }.
-   */
+  function isValidPhone(value) {
+    var digits = digitsOnly(value);
+    return digits.length >= 7 && digits.length <= 15;
+  }
+
+  function isValidEmail(value) {
+    var email = (value || '').trim();
+    return /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email);
+  }
+
   function validateContent(el, contentType) {
     var type = contentType || getCurrentType(el);
     var data = buildContentData(el, type);
+    var msg = {
+      url: 'Enter a website URL.',
+      text: 'Enter some text.',
+      phone: 'Enter a phone number.',
+      sms: 'Enter a phone number.',
+      whatsapp: 'Enter a WhatsApp number including country code.',
+      email: 'Enter an email address.',
+      wifi: 'Enter the network name (SSID).',
+      vcard: 'Enter at least a name.',
+      location: 'Enter latitude and longitude.',
+      event: 'Enter an event title.'
+    };
+
     if (!data || data.length === 0) {
-      var msg = {
-        url: 'Enter a website URL.',
-        text: 'Enter some text.',
-        phone: 'Enter a phone number.',
-        sms: 'Enter a phone number.',
-        email: 'Enter an email address.',
-        wifi: 'Enter the network name (SSID).',
-        vcard: 'Enter at least a name.',
-        location: 'Enter latitude and longitude.',
-        event: 'Enter an event title.'
-      };
       return { valid: false, message: msg[type] || 'Please fill in the required fields.' };
     }
+
+    if (type === 'url') {
+      try {
+        var parsed = new URL(data);
+        if (parsed.protocol !== 'http:' && parsed.protocol !== 'https:') {
+          return { valid: false, message: 'Use a valid http:// or https:// URL.' };
+        }
+      } catch (err) {
+        return { valid: false, message: 'Enter a valid website URL.' };
+      }
+    }
+
+    if (type === 'phone' && !isValidPhone(el.contentPhone && el.contentPhone.value)) {
+      return { valid: false, message: 'Enter a valid phone number (7–15 digits).' };
+    }
+    if (type === 'sms' && !isValidPhone(el.contentSmsNumber && el.contentSmsNumber.value)) {
+      return { valid: false, message: 'Enter a valid SMS phone number (7–15 digits).' };
+    }
+    if (type === 'whatsapp' && !isValidPhone(el.contentWhatsappNumber && el.contentWhatsappNumber.value)) {
+      return { valid: false, message: 'Enter a valid WhatsApp number with country code (7–15 digits).' };
+    }
+    if (type === 'email' && !isValidEmail(el.contentEmail && el.contentEmail.value)) {
+      return { valid: false, message: 'Enter a valid email address.' };
+    }
+    if (type === 'location') {
+      var lat = parseFloat(el.contentLat && el.contentLat.value, 10);
+      var lng = parseFloat(el.contentLng && el.contentLng.value, 10);
+      if (isNaN(lat) || isNaN(lng) || lat < -90 || lat > 90 || lng < -180 || lng > 180) {
+        return { valid: false, message: 'Latitude must be -90 to 90 and longitude -180 to 180.' };
+      }
+    }
+    if (type === 'event' && el.contentEventStart && el.contentEventEnd && el.contentEventStart.value && el.contentEventEnd.value) {
+      if (new Date(el.contentEventEnd.value).getTime() < new Date(el.contentEventStart.value).getTime()) {
+        return { valid: false, message: 'Event end time must be after the start time.' };
+      }
+    }
+
     if (data.length > 2000) return { valid: false, message: 'Content is too long (max 2000 characters).' };
     return { valid: true };
   }
@@ -207,6 +258,7 @@
     buildUrl: buildUrl,
     buildPhone: buildPhone,
     buildSms: buildSms,
+    buildWhatsapp: buildWhatsapp,
     buildEmail: buildEmail,
     buildWifi: buildWifi,
     buildVcard: buildVcard,
