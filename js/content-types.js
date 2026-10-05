@@ -21,6 +21,11 @@
     return (value || '').replace(/\D/g, '');
   }
 
+  function fieldValue(el, key, id) {
+    var node = (el && el[key]) || (typeof document !== 'undefined' && document.getElementById(id));
+    return node ? node.value : '';
+  }
+
   function buildPhone(value) {
     var v = cleanPhone(value);
     if (!v) return '';
@@ -141,8 +146,8 @@
         );
       case 'whatsapp':
         return buildWhatsapp(
-          el.contentWhatsappNumber && el.contentWhatsappNumber.value,
-          el.contentWhatsappMessage && el.contentWhatsappMessage.value
+          fieldValue(el, 'contentWhatsappNumber', 'content-whatsapp-number'),
+          fieldValue(el, 'contentWhatsappMessage', 'content-whatsapp-message')
         );
       case 'email':
         return buildEmail(
@@ -228,7 +233,7 @@
     if (type === 'sms' && !isValidPhone(el.contentSmsNumber && el.contentSmsNumber.value)) {
       return { valid: false, message: 'Enter a valid SMS phone number (7–15 digits).' };
     }
-    if (type === 'whatsapp' && !isValidPhone(el.contentWhatsappNumber && el.contentWhatsappNumber.value)) {
+    if (type === 'whatsapp' && !isValidPhone(fieldValue(el, 'contentWhatsappNumber', 'content-whatsapp-number'))) {
       return { valid: false, message: 'Enter a valid WhatsApp number with country code (7–15 digits).' };
     }
     if (type === 'email' && !isValidEmail(el.contentEmail && el.contentEmail.value)) {
