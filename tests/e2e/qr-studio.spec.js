@@ -46,10 +46,52 @@ test('local project save creates restorable history', async ({ page }) => {
   expect(stored.length).toBeGreaterThan(0);
 });
 
-test('batch parser UI accepts CSV input', async ({ page }) => {
+test('imports a versioned QR Studio design JSON', async ({ page }) => {
+  await waitForStudio(page);
+  const design = {
+    schema: 'qr-studio-design',
+    version: 1,
+    name: 'Imported QA',
+    contentType: 'url',
+    fields: {
+      'content-url': 'https://example.com/imported',
+      'label-text': 'Imported label',
+      'fg-color': '#111827',
+      'fg-color-text': '#111827',
+      'bg-color': '#ffffff',
+      'bg-color-text': '#ffffff'
+    },
+    savedAt: new Date().toISOString()
+  };
+  await page.locator('#studio-import-file').setInputFiles({
+    name: 'design.json',
+    mimeType: 'application/json',
+    buffer: Buffer.from(JSON.stringify(design))
+  });
+  await expect(page.locator('#content-url')).toHaveValue('https://example.com/imported');
+  await expect(page.locator('#label-text')).toHaveValue('Imported label');
+});
+
+test('exports a framed PNG', async ({ page }) => {
+  await waitForStudio(page);
+  await page.locator('#content-url').fill('https://example.com/frame');
+  await page.locator('#generate-btn').click();
+  await expect(page.locator('#qr-container canvas')).toBeVisible();
+  await page.locator('#frame-style').selectOption('website');
+  const downloadPromise = page.waitForEvent('download');
+  await page.locator('#export-framed-png').click();
+  const download = await downloadPromise;
+  expect(download.suggestedFilename()).toBe('qr-code-framed.png');
+});
+
+test('batch generation creates a ZIP download', async ({ page }) => {
   await waitForStudio(page);
   await page.locator('#batch-csv').fill('name,type,data\nSite,url,https://example.com\nHello,text,Hello world');
-  await expect(page.locator('#batch-generate')).toBeEnabled();
+  const downloadPromise = page.waitForEvent('download', { timeout: 30000 });
+  await page.locator('#batch-generate').click();
+  const download = await downloadPromise;
+  expect(download.suggestedFilename()).toBe('qr-studio-batch.zip');
+  await expect(page.locator('#batch-status')).toContainText('Batch complete');
 });
 
 for (const width of [320, 375, 768, 1024, 1440]) {
