@@ -1,0 +1,81 @@
+name: CI
+
+on:
+  pull_request:
+    types: [opened, synchronize, reopened, ready_for_review]
+
+permissions:
+  contents: read
+
+jobs:
+  quality:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Set up Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+
+      - name: Set up PHP
+        uses: shivammathur/setup-php@v2
+        with:
+          php-version: '8.2'
+          coverage: none
+
+      - name: Verify required files
+        shell: bash
+        run: |
+          set -euo pipefail
+          required=(
+            index.html
+            css/styles.css
+            css/studio-refresh.css
+            js/app.js
+            js/content-types.js
+            js/qr-generator.js
+            api/save-design.php
+            api/get-design.php
+            README.md
+            AGENTS.md
+            docs/ARCHITECTURE.md
+            docs/DESIGN-SYSTEM.md
+            docs/GIT-WORKFLOW.md
+          )
+          for file in "${required[@]}"; do
+            test -f "$file" || { echo "Missing required file: $file"; exit 1; }
+          done
+
+      - name: Check JavaScript syntax
+        run: |
+          node --check js/app.js
+          node --check js/content-types.js
+          node --check js/qr-generator.js
+
+      - name: Check PHP syntax
+        run: |
+          php -l api/save-design.php
+          php -l api/get-design.php
+
+      - name: Verify production asset references
+        shell: bash
+        run: |
+          set -euo pipefail
+          grep -q 'css/styles.css' index.html
+          grep -q 'css/studio-refresh.css' index.html
+          grep -q 'js/qr-generator.js' index.html
+          grep -q 'js/content-types.js' index.html
+          grep -q 'js/app.js' index.html
+
+      - name: Static server smoke test
+        shell: bash
+        run: |
+          set -euo pipefail
+          php -S 127.0.0.1:8080 >/tmp/qr-studio-server.log 2>&1 &
+          SERVER_PID=$!
+          trap 'kill $SERVER_PID' EXIT
+          sleep 1
+          curl --fail --silent --show-error http://127.0.0.1:8080/ >/tmp/index.html
+          grep -q 'QR Code Generator' /tmp/index.html
