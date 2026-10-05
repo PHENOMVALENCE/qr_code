@@ -9,12 +9,15 @@ QR Studio is intentionally lightweight. The core product runs entirely in the br
 - `index.html`
 - `css/styles.css`
 - `css/studio-refresh.css`
+- `css/studio-tools.css`
 
 Responsibilities:
 - semantic structure;
 - responsive layout;
 - themes and visual hierarchy;
-- form controls and export UI.
+- form controls and export UI;
+- studio project/preset/history presentation;
+- readiness diagnostics presentation.
 
 ### Application orchestration
 - `js/app.js`
@@ -30,15 +33,44 @@ Responsibilities:
 - optional design persistence calls;
 - dark mode.
 
+### Studio workspace tools
+- `js/studio-tools.js`
+
+Responsibilities:
+- progressive enhancement of the core generator;
+- WhatsApp content-mode UI;
+- curated visual presets;
+- local project history using `localStorage`;
+- JSON design import/export;
+- keyboard shortcuts;
+- restore/apply design snapshots;
+- bootstrap quality diagnostics.
+
+This module is intentionally independent of the QR renderer. It operates through stable DOM controls and the existing Generate action so the core application remains usable if the studio layer fails to load.
+
+### Quality diagnostics
+- `js/qr-diagnostics.js`
+
+Responsibilities:
+- estimate color contrast;
+- check export size;
+- warn about dense payloads;
+- recommend suitable error correction when a logo is used;
+- provide a non-authoritative QR readiness score.
+
+The readiness score is a heuristic and must not be presented as proof that a QR will scan on every device. Actual encode/decode verification remains a separate planned feature.
+
 ### Payload/domain formatting
 - `js/content-types.js`
 
 Responsibilities:
 - convert user input into standards-compatible QR payload strings;
-- URL, text, phone, SMS, email, WiFi, vCard, location and event formats;
-- basic content validation.
+- URL, text, phone, SMS, WhatsApp, email, Wi-Fi, vCard, location and event formats;
+- normalize URLs and WhatsApp click-to-chat links;
+- validate phone/email/location/event input;
+- escape special characters for Wi-Fi, vCard and iCalendar payloads.
 
-New QR content types should be added here rather than assembled directly inside UI event handlers.
+New QR content types should be implemented here rather than assembled directly inside UI event handlers.
 
 ### QR rendering adapter
 - `js/qr-generator.js`
@@ -67,29 +99,39 @@ Current browser dependencies are CDN-loaded:
 Future production hardening may pin/integrity-check assets or vendor critical dependencies where appropriate.
 
 ## State model
-The current application uses DOM-backed state plus small in-memory state such as the active QR instance, uploaded logo and undo history.
+The core application still uses DOM-backed state plus small in-memory state such as the active QR instance, uploaded logo and undo history.
 
-Planned evolution:
-- create a normalized design-state object;
-- serialize that object for history/presets/import/export;
-- preserve compatibility with existing UI controls;
-- avoid introducing a large state-management dependency.
+The studio enhancement serializes a controlled set of DOM fields into a versioned snapshot:
 
-## Planned modules
-As the codebase grows, preferred modular extraction is:
-- `js/design-state.js` — normalized design serialization.
-- `js/presets.js` — curated style templates.
-- `js/history.js` — local project/history store.
-- `js/scanability.js` — contrast/data-density heuristics.
-- `js/import-export.js` — JSON design exchange.
-- `js/batch.js` — CSV parsing and batch QR jobs.
+```json
+{
+  "schema": "qr-studio-design",
+  "version": 1,
+  "name": "Project name",
+  "contentType": "url",
+  "fields": {},
+  "savedAt": "ISO-8601 timestamp"
+}
+```
+
+This format backs local history and JSON exchange. Future schema changes must preserve backwards compatibility or provide an explicit migration path.
+
+## Preferred future modularization
+As complexity grows, the current studio module can be split further into:
+- `js/design-state.js` — normalized design serialization;
+- `js/presets.js` — curated style templates;
+- `js/history.js` — local project/history store;
+- `js/import-export.js` — JSON design exchange;
+- `js/batch.js` — CSV parsing and batch QR jobs;
+- `js/verification.js` — in-browser decode verification.
 
 This modularization should happen incrementally, not as a full rewrite.
 
+## Progressive enhancement rule
+The base generator must remain functional without studio-specific JavaScript or the optional PHP API. Studio functionality should enhance, not replace, the core QR generation path.
+
 ## Dynamic QR architecture — later phase
 Dynamic QR codes require a server-managed redirect identifier rather than direct destination encoding.
-
-Conceptual flow:
 
 ```text
 QR payload -> https://qr.example.com/r/{slug}
@@ -102,12 +144,13 @@ That later architecture will require authenticated management, storage, redirect
 
 ## Non-functional requirements
 - Core QR generation works without login.
-- Static generation should continue without PHP.
+- Static generation continues without PHP.
 - Responsive from narrow mobile to desktop.
 - Accessible keyboard workflow.
 - Safe file/payload handling.
 - QR styling must not silently compromise practical scanability.
 - Export must be deterministic enough for professional use.
+- Local project data remains browser-local unless the user explicitly exports or uses the optional backend.
 
 ## Architectural decision rule
 Before adding a dependency or framework, ask whether it materially improves maintainability, testing or product capability. Do not migrate the existing stack solely for novelty.
