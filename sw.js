@@ -1,4 +1,4 @@
-const CACHE_NAME = 'qr-studio-v1';
+const CACHE_NAME = 'qr-studio-v2';
 const APP_SHELL = [
   './',
   './index.html',
@@ -12,6 +12,7 @@ const APP_SHELL = [
   './js/studio-tools.js',
   './js/qr-diagnostics.js',
   './js/pro-tools.js',
+  './js/pro-tools-fixes.js',
   './manifest.webmanifest',
   './assets/qr-studio-icon.svg'
 ];
