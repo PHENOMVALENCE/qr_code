@@ -17,7 +17,7 @@ jobs:
       - name: Set up Node
         uses: actions/setup-node@v4
         with:
-          node-version: '20'
+          node-version: '24'
 
       - name: Set up PHP
         uses: shivammathur/setup-php@v2
@@ -34,11 +34,17 @@ jobs:
             css/styles.css
             css/studio-refresh.css
             css/studio-tools.css
+            css/pro-tools.css
             js/app.js
             js/content-types.js
             js/qr-generator.js
             js/studio-tools.js
             js/qr-diagnostics.js
+            js/pro-tools.js
+            js/pro-tools-fixes.js
+            manifest.webmanifest
+            sw.js
+            assets/qr-studio-icon.svg
             tests/content-types.test.js
             api/save-design.php
             api/get-design.php
@@ -60,7 +66,13 @@ jobs:
           node --check js/qr-generator.js
           node --check js/studio-tools.js
           node --check js/qr-diagnostics.js
+          node --check js/pro-tools.js
+          node --check js/pro-tools-fixes.js
+          node --check sw.js
           node --check tests/content-types.test.js
+
+      - name: Validate manifest JSON
+        run: node -e "JSON.parse(require('fs').readFileSync('manifest.webmanifest','utf8')); console.log('manifest valid')"
 
       - name: Run payload tests
         run: node tests/content-types.test.js
@@ -81,6 +93,10 @@ jobs:
           grep -q 'js/app.js' index.html
           grep -q 'studio-tools.js' js/content-types.js
           grep -q 'qr-diagnostics.js' js/studio-tools.js
+          grep -q 'pro-tools.js' js/qr-diagnostics.js
+          grep -q 'pro-tools-fixes.js' js/qr-diagnostics.js
+          grep -q 'manifest.webmanifest' js/pro-tools.js
+          grep -q 'sw.js' js/pro-tools.js
 
       - name: Static server smoke test
         shell: bash
@@ -92,5 +108,6 @@ jobs:
           sleep 1
           curl --fail --silent --show-error http://127.0.0.1:8080/ >/tmp/index.html
           grep -q 'QR Code Generator' /tmp/index.html
-          curl --fail --silent --show-error http://127.0.0.1:8080/js/studio-tools.js >/tmp/studio-tools.js
-          curl --fail --silent --show-error http://127.0.0.1:8080/js/qr-diagnostics.js >/tmp/qr-diagnostics.js
+          for asset in js/studio-tools.js js/qr-diagnostics.js js/pro-tools.js js/pro-tools-fixes.js css/pro-tools.css manifest.webmanifest sw.js assets/qr-studio-icon.svg; do
+            curl --fail --silent --show-error "http://127.0.0.1:8080/$asset" >/dev/null
+          done

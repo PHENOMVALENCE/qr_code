@@ -10,6 +10,10 @@ Transform the project from a basic generator into a polished, privacy-first QR c
 - Five reusable visual design presets.
 - Local project history plus JSON design import/export.
 - QR readiness diagnostics for contrast, size, payload density, error correction and logo usage.
+- In-browser decode verification using `jsQR` after generation.
+- Logo size and clear-space controls with format/size validation.
+- CTA/frame preview styles plus framed PNG export.
+- Installable PWA foundation with manifest, app icon and offline shell.
 - Optional lightweight PHP design persistence.
 
 ## Phase 1 — UX refresh
@@ -24,26 +28,31 @@ Transform the project from a basic generator into a polished, privacy-first QR c
 - [x] Recent QR project history stored locally.
 - [x] Save/load design JSON locally, independent of the PHP backend.
 - [x] Dedicated WhatsApp click-to-chat QR payload with optional pre-filled message.
+- [x] Rename/delete actions for individual local history items.
+- [x] Logo sizing and clear-space controls.
+- [x] Frame styles and CTA captions such as “Scan me”.
+- [x] Framed PNG export.
 - [ ] Add purpose-built templates for social links, Wi-Fi cards, business cards, events and payments.
-- [ ] Add rename/delete actions for individual local history items.
-- [ ] Logo sizing, margin and background controls.
-- [ ] Frame styles and CTA captions such as “Scan me”.
+- [ ] Add optional logo background-shape/color treatment for framed exports.
 - [ ] Batch QR generation from CSV with ZIP export.
 
 ## Phase 3 — Quality and safety
 - [x] QR readiness indicator for contrast, export size, payload density, logo use and error correction.
 - [x] URL normalization and stronger validation for phone/email/location/event fields.
 - [x] Escape Wi-Fi, vCard and iCalendar special characters more safely.
-- [ ] Add actual encode/decode verification in-browser before export.
-- [ ] File type, pixel dimension and file-size validation for uploaded logos.
+- [x] Add actual encode/decode verification in-browser before export.
+- [x] Validate uploaded logo MIME type and maximum file size.
+- [ ] Add pixel-dimension validation for uploaded logos.
 - [ ] Security headers and stricter PHP persistence validation.
 - [ ] Automated unit tests for every payload builder.
-- [ ] Browser smoke tests covering generation, preset restore, local history and JSON import/export.
+- [ ] Browser smoke tests covering generation, preset restore, local history, frame export and JSON import/export.
 
 ## Phase 4 — Installable web app
-- [ ] Web app manifest, icons and offline shell.
+- [x] Web app manifest and app icon.
+- [x] Service worker and same-origin offline application shell.
+- [ ] Add a deliberate install prompt/education surface.
 - [ ] Share Target / Web Share support where available.
-- [ ] Install prompt and offline generation.
+- [ ] Add an offline status indicator and explicit offline QA.
 
 ## Later SaaS track
 These features require a persistent backend and are intentionally separated from the privacy-first static generator:
