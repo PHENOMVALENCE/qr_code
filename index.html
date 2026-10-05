@@ -6,6 +6,7 @@
   <meta name="description" content="Free QR Code Generator - Create customizable QR codes with logos, colors, and export to PNG, SVG, PDF.">
   <title>QR Code Generator | Customizable & Free</title>
   <link rel="stylesheet" href="css/styles.css">
+  <link rel="stylesheet" href="css/studio-refresh.css">
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=DM+Sans:ital,opsz,wght@0,9..40,400;0,9..40,500;0,9..40,600;0,9..40,700&display=swap" rel="stylesheet">
@@ -40,7 +41,6 @@
     </header>
 
     <main class="main" role="main">
-      <!-- Input Section -->
       <section class="card section-input" aria-labelledby="input-heading">
         <h2 id="input-heading" class="section-title">Content</h2>
         <p class="content-type-label">What do you want to encode?</p>
@@ -56,29 +56,24 @@
           <button type="button" class="content-type-btn" data-type="event" role="tab" title="Event">Event</button>
         </div>
 
-        <!-- URL -->
         <div class="content-panel active" id="panel-url" data-content-type="url" role="tabpanel">
           <label for="content-url">Website URL</label>
           <input type="url" id="content-url" placeholder="https://example.com" aria-label="Website URL">
         </div>
-        <!-- Text -->
         <div class="content-panel" id="panel-text" data-content-type="text" role="tabpanel" hidden>
           <label for="content-text">Text</label>
           <textarea id="content-text" rows="3" placeholder="Enter plain text..." maxlength="2000" aria-label="Plain text"></textarea>
         </div>
-        <!-- Phone -->
         <div class="content-panel" id="panel-phone" data-content-type="phone" role="tabpanel" hidden>
           <label for="content-phone">Phone number</label>
           <input type="tel" id="content-phone" placeholder="+1 234 567 8900" aria-label="Phone number">
         </div>
-        <!-- SMS -->
         <div class="content-panel" id="panel-sms" data-content-type="sms" role="tabpanel" hidden>
           <label for="content-sms-number">Phone number</label>
           <input type="tel" id="content-sms-number" placeholder="+1 234 567 8900" aria-label="SMS recipient">
           <label for="content-sms-body">Message (optional)</label>
           <textarea id="content-sms-body" rows="2" placeholder="Pre-filled message..." maxlength="500" aria-label="SMS message"></textarea>
         </div>
-        <!-- Email -->
         <div class="content-panel" id="panel-email" data-content-type="email" role="tabpanel" hidden>
           <label for="content-email">Email address</label>
           <input type="email" id="content-email" placeholder="you@example.com" aria-label="Email">
@@ -87,7 +82,6 @@
           <label for="content-email-body">Body (optional)</label>
           <textarea id="content-email-body" rows="2" placeholder="Message body..." maxlength="1000" aria-label="Email body"></textarea>
         </div>
-        <!-- WiFi -->
         <div class="content-panel" id="panel-wifi" data-content-type="wifi" role="tabpanel" hidden>
           <label for="content-wifi-ssid">Network name (SSID)</label>
           <input type="text" id="content-wifi-ssid" placeholder="MyNetwork" aria-label="WiFi network name">
@@ -100,7 +94,6 @@
             <option value="nopass">None</option>
           </select>
         </div>
-        <!-- vCard -->
         <div class="content-panel" id="panel-vcard" data-content-type="vcard" role="tabpanel" hidden>
           <label for="content-vcard-name">Full name</label>
           <input type="text" id="content-vcard-name" placeholder="John Doe" aria-label="Contact name">
@@ -111,7 +104,6 @@
           <label for="content-vcard-org">Organization (optional)</label>
           <input type="text" id="content-vcard-org" placeholder="Company" aria-label="Organization">
         </div>
-        <!-- Location -->
         <div class="content-panel" id="panel-location" data-content-type="location" role="tabpanel" hidden>
           <label for="content-lat">Latitude</label>
           <input type="text" id="content-lat" placeholder="40.7128" aria-label="Latitude">
@@ -119,7 +111,6 @@
           <input type="text" id="content-lng" placeholder="-74.0060" aria-label="Longitude">
           <p class="hint">Or use a maps link: paste URL in Text type.</p>
         </div>
-        <!-- Event -->
         <div class="content-panel" id="panel-event" data-content-type="event" role="tabpanel" hidden>
           <label for="content-event-title">Event title</label>
           <input type="text" id="content-event-title" placeholder="Meeting" aria-label="Event title">
@@ -138,11 +129,8 @@
       </section>
 
       <div class="layout-two">
-        <!-- Customization Panel -->
         <aside class="card panel-customize" aria-labelledby="customize-heading">
           <h2 id="customize-heading" class="section-title">Customize</h2>
-
-          <!-- Size & resolution -->
           <fieldset class="fieldset">
             <legend>Size & quality</legend>
             <div class="row">
@@ -161,7 +149,6 @@
             </div>
           </fieldset>
 
-          <!-- Colors -->
           <fieldset class="fieldset">
             <legend>Colors</legend>
             <div class="row">
@@ -198,7 +185,6 @@
             </div>
           </fieldset>
 
-          <!-- Corner style -->
           <fieldset class="fieldset">
             <legend>Corner style</legend>
             <div class="row">
@@ -227,7 +213,6 @@
             </div>
           </fieldset>
 
-          <!-- Dot style -->
           <fieldset class="fieldset">
             <legend>Dot style</legend>
             <div class="row">
@@ -243,7 +228,6 @@
             </div>
           </fieldset>
 
-          <!-- Label -->
           <fieldset class="fieldset">
             <legend>Label</legend>
             <div class="row">
@@ -256,7 +240,6 @@
             </div>
           </fieldset>
 
-          <!-- Logo -->
           <fieldset class="fieldset">
             <legend>Logo / image</legend>
             <div class="row">
@@ -269,7 +252,6 @@
           </fieldset>
         </aside>
 
-        <!-- Preview & Export -->
         <section class="card panel-preview" aria-labelledby="preview-heading">
           <h2 id="preview-heading" class="section-title">Preview</h2>
           <div class="preview-wrap" id="preview-wrap">
@@ -309,9 +291,7 @@
     </footer>
   </div>
 
-  <!-- qr-code-styling from CDN -->
   <script src="https://unpkg.com/qr-code-styling@1.6.0-rc.1/lib/qr-code-styling.js"></script>
-  <!-- jsPDF for PDF export (optional, loaded dynamically or via CDN) -->
   <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
   <script src="js/qr-generator.js"></script>
   <script src="js/content-types.js"></script>
