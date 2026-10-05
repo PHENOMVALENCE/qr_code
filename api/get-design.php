@@ -1,30 +1,43 @@
 <?php
 /**
  * Optional API: Get saved QR design by ID.
- * GET ?id=xxx returns JSON design or 404.
  */
-header('Content-Type: application/json');
-header('Access-Control-Allow-Origin: *');
+declare(strict_types=1);
 
-$id = isset($_GET['id']) ? preg_replace('/[^a-f0-9]/', '', $_GET['id']) : '';
-if (strlen($id) !== 16) {
-    http_response_code(400);
-    echo json_encode(['error' => 'Invalid ID']);
+header('Content-Type: application/json; charset=utf-8');
+header('Cache-Control: no-store');
+header('X-Content-Type-Options: nosniff');
+header('Referrer-Policy: no-referrer');
+
+function respond(int $status, array $payload): void {
+    http_response_code($status);
+    echo json_encode($payload, JSON_UNESCAPED_SLASHES);
     exit;
+}
+
+if ($_SERVER['REQUEST_METHOD'] !== 'GET') {
+    header('Allow: GET');
+    respond(405, ['error' => 'Method not allowed']);
+}
+
+$id = (string)($_GET['id'] ?? '');
+if (!preg_match('/^(?:[a-f0-9]{16}|[a-f0-9]{24})$/', $id)) {
+    respond(400, ['error' => 'Invalid ID']);
 }
 
 $jsonPath = dirname(__DIR__) . '/data/designs/' . $id . '.json';
-if (!is_file($jsonPath)) {
-    http_response_code(404);
-    echo json_encode(['error' => 'Design not found']);
-    exit;
+if (!is_file($jsonPath) || !is_readable($jsonPath)) {
+    respond(404, ['error' => 'Design not found']);
 }
 
-$payload = json_decode(file_get_contents($jsonPath), true);
-if (!$payload) {
-    http_response_code(500);
-    echo json_encode(['error' => 'Invalid design file']);
-    exit;
+$raw = file_get_contents($jsonPath);
+if ($raw === false || strlen($raw) > 128 * 1024) {
+    respond(500, ['error' => 'Invalid design file']);
 }
 
-echo json_encode($payload);
+$payload = json_decode($raw, true, 32);
+if (!is_array($payload) || ($payload['id'] ?? null) !== $id || !isset($payload['data'])) {
+    respond(500, ['error' => 'Invalid design file']);
+}
+
+respond(200, $payload);
