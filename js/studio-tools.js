@@ -6,6 +6,7 @@
  * - Local project history
  * - JSON import/export
  * - Keyboard shortcuts
+ * - Quality diagnostics bootstrap
  */
 (function () {
   'use strict';
@@ -74,6 +75,14 @@
     link.href = 'css/studio-tools.css';
     link.setAttribute('data-qr-studio-tools', 'true');
     document.head.appendChild(link);
+  }
+
+  function loadDiagnostics() {
+    if (document.querySelector('script[data-qr-diagnostics]')) return;
+    var script = document.createElement('script');
+    script.src = 'js/qr-diagnostics.js';
+    script.setAttribute('data-qr-diagnostics', 'true');
+    document.head.appendChild(script);
   }
 
   function injectWhatsappMode() {
@@ -242,14 +251,18 @@
   }
 
   function saveHistory(snapshot, silent) {
-    var history = loadHistory();
-    var serialized = JSON.stringify(snapshot.fields);
-    history = history.filter(function (item) { return JSON.stringify(item.fields) !== serialized; });
-    history.unshift(snapshot);
-    history = history.slice(0, HISTORY_LIMIT);
-    localStorage.setItem(HISTORY_KEY, JSON.stringify(history));
-    renderHistory();
-    if (!silent) notify('Project saved on this device.');
+    try {
+      var history = loadHistory();
+      var serialized = JSON.stringify(snapshot.fields);
+      history = history.filter(function (item) { return JSON.stringify(item.fields) !== serialized; });
+      history.unshift(snapshot);
+      history = history.slice(0, HISTORY_LIMIT);
+      localStorage.setItem(HISTORY_KEY, JSON.stringify(history));
+      renderHistory();
+      if (!silent) notify('Project saved on this device.');
+    } catch (err) {
+      if (!silent) notify('Could not save locally. Browser storage may be unavailable.', true);
+    }
   }
 
   function renderHistory() {
@@ -346,6 +359,17 @@
     });
   }
 
+  function clearWhatsappOnReset() {
+    var reset = document.getElementById('reset-btn');
+    if (!reset) return;
+    reset.addEventListener('click', function () {
+      ['content-whatsapp-number', 'content-whatsapp-message'].forEach(function (id) {
+        var node = document.getElementById(id);
+        if (node) node.value = '';
+      });
+    });
+  }
+
   function bindStudioActions() {
     var grid = document.getElementById('preset-grid');
     if (grid) grid.addEventListener('click', function (event) {
@@ -386,9 +410,11 @@
     var generate = document.getElementById('generate-btn');
     if (generate) generate.addEventListener('click', function () {
       var snapshot = captureSnapshot();
-      var currentType = snapshot.contentType;
-      var requiredField = currentType === 'whatsapp' ? document.getElementById('content-whatsapp-number') : null;
-      if (currentType !== 'whatsapp' || (requiredField && requiredField.value.trim())) saveHistory(snapshot, true);
+      var activePanel = document.querySelector('.content-panel.active');
+      var hasValue = activePanel && Array.prototype.some.call(activePanel.querySelectorAll('input,textarea'), function (node) {
+        return !!String(node.value || '').trim();
+      });
+      if (hasValue) saveHistory(snapshot, true);
     });
 
     document.addEventListener('keydown', function (event) {
@@ -411,8 +437,10 @@
     injectStudioPanel();
     bindUnifiedTabs();
     bindWhatsappInputs();
+    clearWhatsappOnReset();
     bindStudioActions();
     renderHistory();
+    loadDiagnostics();
   }
 
   if (document.readyState === 'loading') {
