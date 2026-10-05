@@ -14,11 +14,20 @@
     }, true);
   }
 
+  function loadShareTarget() {
+    if (document.querySelector('script[data-share-target]')) return;
+    var script = document.createElement('script');
+    script.src = 'js/share-target.js';
+    script.setAttribute('data-share-target', 'true');
+    document.head.appendChild(script);
+  }
+
   function loadProductionTools() {
-    if (document.querySelector('script[data-production-tools]')) return;
+    if (document.querySelector('script[data-production-tools]')) { loadShareTarget(); return; }
     var script = document.createElement('script');
     script.src = 'js/production-tools.js';
     script.setAttribute('data-production-tools', 'true');
+    script.onload = loadShareTarget;
     document.head.appendChild(script);
   }
 
