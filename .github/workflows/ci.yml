@@ -33,9 +33,13 @@ jobs:
             index.html
             css/styles.css
             css/studio-refresh.css
+            css/studio-tools.css
             js/app.js
             js/content-types.js
             js/qr-generator.js
+            js/studio-tools.js
+            js/qr-diagnostics.js
+            tests/content-types.test.js
             api/save-design.php
             api/get-design.php
             README.md
@@ -43,6 +47,7 @@ jobs:
             docs/ARCHITECTURE.md
             docs/DESIGN-SYSTEM.md
             docs/GIT-WORKFLOW.md
+            docs/PRODUCT-ROADMAP.md
           )
           for file in "${required[@]}"; do
             test -f "$file" || { echo "Missing required file: $file"; exit 1; }
@@ -53,6 +58,12 @@ jobs:
           node --check js/app.js
           node --check js/content-types.js
           node --check js/qr-generator.js
+          node --check js/studio-tools.js
+          node --check js/qr-diagnostics.js
+          node --check tests/content-types.test.js
+
+      - name: Run payload tests
+        run: node tests/content-types.test.js
 
       - name: Check PHP syntax
         run: |
@@ -68,6 +79,8 @@ jobs:
           grep -q 'js/qr-generator.js' index.html
           grep -q 'js/content-types.js' index.html
           grep -q 'js/app.js' index.html
+          grep -q 'studio-tools.js' js/content-types.js
+          grep -q 'qr-diagnostics.js' js/studio-tools.js
 
       - name: Static server smoke test
         shell: bash
@@ -79,3 +92,5 @@ jobs:
           sleep 1
           curl --fail --silent --show-error http://127.0.0.1:8080/ >/tmp/index.html
           grep -q 'QR Code Generator' /tmp/index.html
+          curl --fail --silent --show-error http://127.0.0.1:8080/js/studio-tools.js >/tmp/studio-tools.js
+          curl --fail --silent --show-error http://127.0.0.1:8080/js/qr-diagnostics.js >/tmp/qr-diagnostics.js
