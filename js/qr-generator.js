@@ -1,22 +1,12 @@
 /**
  * QR Generator Module
- * Wraps qr-code-styling: builds options, updates instance, and provides export helpers.
- * No external paid services; runs in browser.
+ * Wraps qr-code-styling: builds options, updates instances, and provides export helpers.
  */
 (function (global) {
   'use strict';
 
-  // QRCodeStyling is loaded from CDN (global)
   var QRCodeStyling = global.QRCodeStyling;
 
-  /**
-   * Build gradient object for qr-code-styling.
-   * @param {string} type - 'linear' or 'radial'
-   * @param {number} rotationDegrees - rotation in degrees (0, 45, 90, etc.)
-   * @param {string} colorFrom - hex color
-   * @param {string} colorTo - hex color
-   * @returns {object} gradient config
-   */
   function buildGradient(type, rotationDegrees, colorFrom, colorTo) {
     var rad = (rotationDegrees != null ? parseFloat(rotationDegrees) : 0) * (Math.PI / 180);
     return {
@@ -29,20 +19,20 @@
     };
   }
 
-  /**
-   * Build full options object for QRCodeStyling from UI state.
-   * @param {object} state - { data, size, ec, fgColor, bgColor, transparent, gradient, cornerSquare, cornerDot, dotStyle, image, labelText }
-   * @returns {object} options for new QRCodeStyling(options) or .update(options)
-   */
+  function clamp(value, min, max, fallback) {
+    var parsed = parseFloat(value);
+    if (!isFinite(parsed)) return fallback;
+    return Math.min(max, Math.max(min, parsed));
+  }
+
   function buildOptions(state) {
+    state = state || {};
     var opts = {
       width: state.size || 300,
       height: state.size || 300,
       data: state.data || '',
       margin: 10,
-      qrOptions: {
-        errorCorrectionLevel: state.ec || 'Q'
-      },
+      qrOptions: { errorCorrectionLevel: state.ec || 'Q' },
       dotsOptions: {
         color: state.fgColor || '#1a1a2e',
         type: state.dotStyle || 'square'
@@ -71,8 +61,8 @@
       opts.image = state.image;
       opts.imageOptions = {
         hideBackgroundDots: true,
-        imageSize: 0.4,
-        margin: 5,
+        imageSize: clamp(state.logoImageSize, 0.2, 0.45, 0.32),
+        margin: clamp(state.logoMargin, 0, 20, 6),
         crossOrigin: 'anonymous'
       };
     }
@@ -80,12 +70,6 @@
     return opts;
   }
 
-  /**
-   * Create and return a QRCodeStyling instance; append to container and keep reference.
-   * @param {HTMLElement} container - element to append QR into
-   * @param {object} initialState - same shape as state for buildOptions
-   * @returns {object} { qr, update, getRawData, download }
-   */
   function createQR(container, initialState) {
     if (!QRCodeStyling) {
       throw new Error('QRCodeStyling not loaded. Ensure script is included.');
@@ -98,20 +82,12 @@
     }
     return {
       qr: qr,
-      update: function (state) {
-        var newOpts = buildOptions(state);
-        qr.update(newOpts);
-      },
-      getRawData: function (extension) {
-        return qr.getRawData(extension || 'png');
-      },
-      download: function (opts) {
-        return qr.download(opts || { name: 'qr', extension: 'png' });
-      }
+      update: function (state) { qr.update(buildOptions(state || {})); },
+      getRawData: function (extension) { return qr.getRawData(extension || 'png'); },
+      download: function (opts) { return qr.download(opts || { name: 'qr', extension: 'png' }); }
     };
   }
 
-  // Export for use in app.js
   global.QRGenerator = {
     buildOptions: buildOptions,
     buildGradient: buildGradient,
