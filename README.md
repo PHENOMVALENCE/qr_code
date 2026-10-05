@@ -1,117 +1,151 @@
 # QR Studio
 
-A modern, privacy-first web application for creating, styling, checking and exporting QR codes. Core generation runs entirely in the browser with no account and no paid API requirement. An optional PHP backend can persist generated designs.
+QR Studio is a production-focused, privacy-first web application for creating, styling, validating, verifying and exporting QR codes. Core generation runs entirely in the browser with no account requirement. An optional hardened PHP API can persist explicit user-requested designs.
 
-## Features
+## Production feature set
 
-### QR content types
-Create QR codes for:
-- Website URLs
+### QR payloads
+- Website URL
 - Plain text
-- Phone calls
+- Phone
 - SMS
-- WhatsApp click-to-chat with an optional pre-filled message
+- WhatsApp click-to-chat
 - Email
-- Wi-Fi credentials
-- vCard contacts
+- Wi-Fi
+- vCard contact
 - Geographic coordinates
-- Calendar events
+- Calendar event
 
-### Customization
+### Templates and visual design
+- Website
+- Social profile
+- WhatsApp
+- Wi-Fi card
+- Business card
+- Event
+- Menu
+- Payment link
+- Five reusable visual presets: Classic, Indigo Flow, Ocean, Editorial and Neon Night
 - Foreground/background colors
-- Linear foreground gradients
-- 128–1024 px output sizing
-- Error correction levels L, M, Q and H
-- Multiple corner-square, corner-dot and data-dot styles
-- Optional text label
-- Center logo/image
-- Transparent background
-- Five quick visual presets: Classic, Indigo Flow, Ocean, Editorial and Neon Night
+- Gradients
+- Multiple data-dot and corner styles
+- Output sizes from 128–1024 px
+- Error correction L/M/Q/H
+- Center logo with size and clear-space controls
+- QR frames and CTA labels including custom CTA text
+- Transparent background support
 
-### QR Studio workspace
-- Responsive studio layout with sticky desktop preview
-- Horizontal content-mode selector on smaller screens
-- Recent local project history stored in the browser
-- Restore previously generated projects
-- Export a design configuration as JSON
-- Import a QR Studio JSON design on another browser/device
+### Project workflow
+- Live preview
+- Sticky desktop preview layout
+- Local project history
+- Restore, rename and delete saved local projects
+- JSON design export/import
+- Reset and undo
+- Dark mode
 - Keyboard shortcuts:
-  - `Ctrl/Cmd + S` — save the current project locally
+  - `Ctrl/Cmd + S` — save locally
   - `Ctrl/Cmd + Enter` — generate immediately
 
-### QR readiness diagnostics
-QR Studio provides a non-authoritative readiness score using practical heuristics including:
-- foreground/background contrast;
-- output size;
-- payload density;
-- logo usage;
-- selected error correction level;
-- transparent-background risk.
+### Quality and verification
+- QR readiness score
+- Contrast diagnostics
+- Payload-density warnings
+- Export-size guidance
+- Logo/error-correction guidance
+- Transparent-background warnings
+- In-browser decode verification with `jsQR`
+- URL, phone, WhatsApp, email, coordinate and event validation
+- Wi-Fi/vCard/iCalendar escaping
+- Logo MIME, file-size and pixel-dimension validation
 
-The score is guidance, not a guarantee that every camera/device will decode the QR. In-browser decode verification is planned separately.
-
-### Validation and payload safety
-- URL normalization and HTTP/HTTPS validation
-- Phone and WhatsApp digit-length validation
-- Email format validation
-- Latitude/longitude range checks
-- Event start/end ordering checks
-- Safer escaping for Wi-Fi, vCard and iCalendar payloads
-
-### Export & output
+### Export
 - PNG
 - SVG
-- PDF via jsPDF
-- Clipboard image copy where supported
+- PDF
+- Framed PNG
+- Clipboard image copy
 - Print
-- Optional server-side design persistence
+- Web Share where supported
+- CSV batch generation to ZIP, up to 100 QR codes per batch
 
-### User experience
-- Live preview
-- Reset and undo
-- Dark mode with persisted preference
-- Mobile-friendly responsive controls
-- Keyboard focus states and reduced-motion support
-- No authentication required for the core generator
+### PWA/offline
+- Installable web app manifest
+- App icon
+- Service worker
+- Offline application shell
+- Critical QR dependency caching for repeat offline use
+- Install prompt where supported
+- Online/offline status indicator
+- Web Share Target for links/text shared into the installed app
 
-## Technology stack
+### Optional PHP persistence
+- Explicit Save Design action only
+- Bounded request sizes
+- Allowed-option filtering
+- Strong random design IDs
+- PNG signature/size validation
+- Protected `data/designs` storage
+- Strict retrieval ID validation
 
-- **Frontend:** HTML5, CSS3 and vanilla JavaScript
-- **QR rendering:** `qr-code-styling`
-- **PDF export:** `jsPDF`
-- **Optional backend:** PHP 7.4+
-- **Persistence:** browser `localStorage` for local projects; optional file-based PHP persistence in `data/designs/`
-- **CI:** GitHub Actions on pull requests
+## Technology
 
-## Setup
+- HTML5
+- CSS3
+- Vanilla JavaScript
+- PHP 8.2+ for optional persistence
+- `qr-code-styling@1.6.0-rc.1`
+- `jsPDF@2.5.1`
+- `jsQR@1.4.0`
+- `JSZip@3.10.1`
+- Playwright for browser/responsive QA
+- GitHub Actions for PR CI
 
-### Frontend-only development
+## Run locally
 
-1. Clone the repository.
-2. Serve the project through an HTTP server:
-   - XAMPP: place under `htdocs/qr_code`
-   - PHP: `php -S localhost:8080`
-   - Node: `npx serve .`
-3. Open the served URL in a modern browser.
+### Basic app
 
-Generation, presets, local history, diagnostics and exports work without the PHP backend. The server-side **Save design** action requires PHP.
+```bash
+php -S 127.0.0.1:8080
+```
 
-### Optional PHP design persistence
+Then open `http://127.0.0.1:8080`.
 
-Create a writable design directory:
+The generator, local history, templates, diagnostics and exports work without the PHP persistence API being configured separately.
+
+### Automated tests
+
+```bash
+node tests/content-types.test.js
+npm install
+npx playwright install chromium
+npm run test:e2e
+```
+
+## Optional PHP persistence
+
+Create a writable directory owned appropriately by the web-server user:
 
 ```bash
 mkdir -p data/designs
-chmod 755 data/designs
+chmod 750 data/designs
 ```
 
-Saved server designs use:
-- `data/designs/{id}.json`
-- `data/designs/{id}.png` when image data is supplied
+On Apache/shared hosting, keep both repository `.htaccess` files in place.
 
-### Shared hosting
+Persisted files are intentionally not directly web-accessible; retrieval goes through `api/get-design.php`.
 
-Upload the project to the desired web root and ensure `data/designs/` is writable if server persistence is enabled. Static QR creation does not require a database.
+## Batch CSV format
+
+```csv
+name,type,data
+Homepage,url,https://example.com
+Support,whatsapp,255700000000
+Hotline,phone,+255700000000
+Greeting,text,Hello world
+```
+
+Supported batch types are `url`, `text`, `phone`, `whatsapp` and `email`.
 
 ## Project structure
 
@@ -119,34 +153,48 @@ Upload the project to the desired web root and ensure `data/designs/` is writabl
 qr_code/
 ├── index.html
 ├── AGENTS.md
+├── .htaccess
+├── manifest.webmanifest
+├── sw.js
+├── package.json
+├── playwright.config.js
+├── assets/
+│   └── qr-studio-icon.svg
 ├── css/
 │   ├── styles.css
 │   ├── studio-refresh.css
-│   └── studio-tools.css
+│   ├── studio-tools.css
+│   ├── pro-tools.css
+│   └── production-tools.css
 ├── js/
 │   ├── app.js
 │   ├── content-types.js
 │   ├── qr-generator.js
 │   ├── studio-tools.js
-│   └── qr-diagnostics.js
+│   ├── qr-diagnostics.js
+│   ├── pro-tools.js
+│   ├── pro-tools-fixes.js
+│   ├── production-tools.js
+│   └── share-target.js
 ├── api/
 │   ├── save-design.php
 │   └── get-design.php
 ├── data/designs/
+│   └── .htaccess
+├── tests/
+│   ├── content-types.test.js
+│   └── e2e/qr-studio.spec.js
 ├── docs/
 │   ├── AGENT-GUIDE.md
 │   ├── ARCHITECTURE.md
 │   ├── DESIGN-SYSTEM.md
 │   ├── GIT-WORKFLOW.md
-│   └── PRODUCT-ROADMAP.md
-├── .github/workflows/ci.yml
-├── README.md
-└── SETUP.md
+│   ├── PRODUCT-ROADMAP.md
+│   └── PRODUCTION-READINESS.md
+└── .github/workflows/ci.yml
 ```
 
 ## Design exchange format
-
-Local JSON export uses a versioned payload:
 
 ```json
 {
@@ -159,34 +207,30 @@ Local JSON export uses a versioned payload:
 }
 ```
 
-Future schema changes should retain compatibility or provide an explicit migration path.
+## Privacy model
 
-## Privacy
+Core QR content stays in the browser. Local project history uses browser storage. Batch input is processed locally. QR content is sent to the optional PHP endpoint only when the user explicitly invokes the server-side Save Design action.
 
-Core QR generation, presets, readiness analysis and local project history operate in the browser. Local projects are not uploaded by the local-history feature. Data leaves the browser only when the user explicitly uses an external destination/service or the optional PHP save endpoint.
+Dynamic QR redirects, scan analytics, cloud team workspaces and hosted user files are intentionally outside this static-first release because they require authenticated persistent infrastructure and separate privacy/retention controls.
 
-## Accessibility & performance
+## CI / release gate
 
-- Semantic HTML and ARIA where useful
-- Keyboard focus visibility
-- Responsive layouts from mobile to desktop
-- `prefers-reduced-motion` support
-- Debounced QR rendering during typing
-- Progressive enhancement: the base generator remains the primary runtime path
+Every pull request runs:
+- required-file validation;
+- JavaScript syntax checks;
+- PHP linting;
+- manifest validation;
+- payload unit tests;
+- static asset smoke tests;
+- Playwright browser workflow checks;
+- responsive page-overflow checks at 320, 375, 768, 1024 and 1440 px.
 
-## Documentation
-
-See:
-- `docs/DESIGN-SYSTEM.md` for visual and responsive rules
-- `docs/ARCHITECTURE.md` for module boundaries
-- `docs/GIT-WORKFLOW.md` for branching, commits and PR discipline
-- `docs/AGENT-GUIDE.md` and root `AGENTS.md` for coding-agent conventions
-- `docs/PRODUCT-ROADMAP.md` for upcoming features
+See `docs/PRODUCTION-READINESS.md` before deploying.
 
 ## Browser support
 
-Modern Chrome, Edge, Firefox and Safari with Canvas/SVG support. Clipboard image copy requires HTTPS/localhost and browser support for `navigator.clipboard.write` and `ClipboardItem`.
+Target: current Chrome, Edge, Firefox and Safari. PWA install, Web Share and clipboard capabilities vary by browser and require HTTPS in production.
 
 ## License
 
-Use and modify freely. `qr-code-styling` is MIT licensed. jsPDF is distributed under its own license; consult the respective upstream projects for details.
+Use and modify freely. Third-party libraries remain subject to their upstream licenses.

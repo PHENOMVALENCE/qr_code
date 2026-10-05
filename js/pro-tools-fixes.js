@@ -1,4 +1,4 @@
-/* Compatibility fixes for QR Studio pro enhancements. */
+/* Compatibility fixes and final production bootstrap for QR Studio. */
 (function () {
   'use strict';
 
@@ -14,10 +14,28 @@
     }, true);
   }
 
+  function loadShareTarget() {
+    if (document.querySelector('script[data-share-target]')) return;
+    var script = document.createElement('script');
+    script.src = 'js/share-target.js';
+    script.setAttribute('data-share-target', 'true');
+    document.head.appendChild(script);
+  }
+
+  function loadProductionTools() {
+    if (document.querySelector('script[data-production-tools]')) { loadShareTarget(); return; }
+    var script = document.createElement('script');
+    script.src = 'js/production-tools.js';
+    script.setAttribute('data-production-tools', 'true');
+    script.onload = loadShareTarget;
+    document.head.appendChild(script);
+  }
+
   function init() {
     protectHistoryRefresh();
     var host = document.getElementById('studio-tools');
     if (host) new MutationObserver(protectHistoryRefresh).observe(host, { childList: true, subtree: true });
+    loadProductionTools();
   }
 
   if (document.readyState === 'loading') document.addEventListener('DOMContentLoaded', init);

@@ -1,0 +1,13 @@
+{
+  "name": "qr-studio",
+  "version": "1.0.0",
+  "private": true,
+  "scripts": {
+    "test:unit": "node tests/content-types.test.js",
+    "test:e2e": "playwright test",
+    "test": "npm run test:unit && npm run test:e2e"
+  },
+  "devDependencies": {
+    "@playwright/test": "1.55.1"
+  }
+}
