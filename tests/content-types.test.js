@@ -42,10 +42,9 @@ assert.equal(
 );
 assert.equal(ContentTypes.buildLocation('-6.7924', '39.2083'), 'geo:-6.7924,39.2083');
 
-assert.deepEqual(
-  validate('url', { contentUrl: node('https://example.com') }),
-  { valid: true }
-);
+// Validation objects originate inside a vm context. Compare primitives rather than
+// object prototypes so the test remains correct across JavaScript realms.
+assert.equal(validate('url', { contentUrl: node('https://example.com') }).valid, true);
 assert.equal(validate('url', { contentUrl: node('ftp://example.com') }).valid, false);
 assert.equal(validate('email', { contentEmail: node('not-an-email') }).valid, false);
 assert.equal(validate('phone', { contentPhone: node('123') }).valid, false);
@@ -67,6 +66,6 @@ const whatsappFields = {
   contentWhatsappMessage: node('Hi')
 };
 assert.equal(ContentTypes.buildContentData(whatsappFields, 'whatsapp'), 'https://wa.me/255753123456?text=Hi');
-assert.deepEqual(validate('whatsapp', whatsappFields), { valid: true });
+assert.equal(validate('whatsapp', whatsappFields).valid, true);
 
 console.log('content-types tests passed');
