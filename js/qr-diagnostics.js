@@ -1,7 +1,6 @@
 /* QR Studio readiness diagnostics */
 (function () {
   'use strict';
-
   var timer = null;
 
   function injectPanel() {
@@ -10,13 +9,7 @@
     var panel = document.createElement('div');
     panel.id = 'qr-readiness';
     panel.className = 'qr-readiness';
-    panel.innerHTML = '' +
-      '<div class="readiness-head">' +
-        '<div><span class="readiness-kicker">Quality check</span><h3>QR readiness</h3></div>' +
-        '<div class="readiness-score" id="readiness-score"><strong>—</strong><span>/100</span></div>' +
-      '</div>' +
-      '<div class="readiness-meter" aria-hidden="true"><span id="readiness-meter-fill"></span></div>' +
-      '<div id="readiness-findings" class="readiness-findings"><p>Generate a QR code to review scan-readiness.</p></div>';
+    panel.innerHTML = '<div class="readiness-head"><div><span class="readiness-kicker">Quality check</span><h3>QR readiness</h3></div><div class="readiness-score" id="readiness-score"><strong>—</strong><span>/100</span></div></div><div class="readiness-meter" aria-hidden="true"><span id="readiness-meter-fill"></span></div><div id="readiness-findings" class="readiness-findings"><p>Generate a QR code to review scan-readiness.</p></div>';
     preview.appendChild(panel);
   }
 
@@ -28,33 +21,19 @@
   }
 
   function luminance(rgb) {
-    var channels = [rgb.r, rgb.g, rgb.b].map(function (value) {
-      var channel = value / 255;
-      return channel <= 0.03928 ? channel / 12.92 : Math.pow((channel + 0.055) / 1.055, 2.4);
-    });
-    return 0.2126 * channels[0] + 0.7152 * channels[1] + 0.0722 * channels[2];
+    var c = [rgb.r, rgb.g, rgb.b].map(function (v) { var x = v / 255; return x <= 0.03928 ? x / 12.92 : Math.pow((x + 0.055) / 1.055, 2.4); });
+    return 0.2126 * c[0] + 0.7152 * c[1] + 0.0722 * c[2];
   }
 
   function contrast(a, b) {
-    var rgbA = hexToRgb(a);
-    var rgbB = hexToRgb(b);
-    if (!rgbA || !rgbB) return 0;
-    var l1 = luminance(rgbA);
-    var l2 = luminance(rgbB);
-    var lighter = Math.max(l1, l2);
-    var darker = Math.min(l1, l2);
-    return (lighter + 0.05) / (darker + 0.05);
+    var x = hexToRgb(a), y = hexToRgb(b);
+    if (!x || !y) return 0;
+    var l1 = luminance(x), l2 = luminance(y);
+    return (Math.max(l1, l2) + 0.05) / (Math.min(l1, l2) + 0.05);
   }
 
-  function value(id, fallback) {
-    var node = document.getElementById(id);
-    return node ? node.value : fallback;
-  }
-
-  function checked(id) {
-    var node = document.getElementById(id);
-    return !!(node && node.checked);
-  }
+  function value(id, fallback) { var n = document.getElementById(id); return n ? n.value : fallback; }
+  function checked(id) { var n = document.getElementById(id); return !!(n && n.checked); }
 
   function currentPayload() {
     var active = document.querySelector('.content-type-btn.active');
@@ -71,8 +50,7 @@
   function analyse() {
     var payload = currentPayload();
     if (!payload.replace(/\|/g, '').trim()) return null;
-    var score = 100;
-    var findings = [];
+    var score = 100, findings = [];
     var bg = value('bg-color-text', '#ffffff');
     var fg = checked('use-gradient') ? value('gradient-from', '#6366f1') : value('fg-color-text', '#1a1a2e');
     var ratio = contrast(fg, bg);
@@ -83,43 +61,23 @@
     var transparent = checked('transparent-bg');
     var length = payload.length;
 
-    if (transparent) {
-      score -= 8;
-      findings.push({ status: 'warn', text: 'Transparent backgrounds depend on where the QR is placed. Test contrast after placement.' });
-    } else if (ratio < 3) {
-      score -= 38;
-      findings.push({ status: 'bad', text: 'Foreground/background contrast is too low (' + ratio.toFixed(1) + ':1).' });
-    } else if (ratio < 4.5) {
-      score -= 20;
-      findings.push({ status: 'warn', text: 'Contrast is usable but could be stronger (' + ratio.toFixed(1) + ':1).' });
-    } else {
-      findings.push({ status: 'good', text: 'Strong color contrast (' + ratio.toFixed(1) + ':1).' });
-    }
+    if (transparent) { score -= 8; findings.push({ status: 'warn', text: 'Transparent backgrounds depend on placement. Test contrast after export.' }); }
+    else if (ratio < 3) { score -= 38; findings.push({ status: 'bad', text: 'Foreground/background contrast is too low (' + ratio.toFixed(1) + ':1).' }); }
+    else if (ratio < 4.5) { score -= 20; findings.push({ status: 'warn', text: 'Contrast is usable but could be stronger (' + ratio.toFixed(1) + ':1).' }); }
+    else findings.push({ status: 'good', text: 'Strong color contrast (' + ratio.toFixed(1) + ':1).' });
 
-    if (size < 192) {
-      score -= 18;
-      findings.push({ status: 'warn', text: 'Increase export size for more reliable scanning and print use.' });
-    } else findings.push({ status: 'good', text: 'Export size is suitable for common digital use.' });
+    if (size < 192) { score -= 18; findings.push({ status: 'warn', text: 'Increase export size for more reliable scanning and print use.' }); }
+    else findings.push({ status: 'good', text: 'Export size is suitable for common digital use.' });
 
-    if (hasLogo && ec !== 'H') {
-      score -= 18;
-      findings.push({ status: 'warn', text: 'Use High (H) error correction when placing a logo in the QR.' });
-    } else if (hasLogo) findings.push({ status: 'good', text: 'High error correction is enabled for the embedded logo.' });
+    if (hasLogo && ec !== 'H') { score -= 18; findings.push({ status: 'warn', text: 'Use High (H) error correction when placing a logo in the QR.' }); }
+    else if (hasLogo) findings.push({ status: 'good', text: 'High error correction is enabled for the embedded logo.' });
 
-    if (length > 1200) {
-      score -= 22;
-      findings.push({ status: 'warn', text: 'Payload is very dense. Prefer a short URL when possible.' });
-    } else if (length > 600) {
-      score -= 10;
-      findings.push({ status: 'warn', text: 'Payload is moderately dense; scanning may require a larger QR.' });
-    } else findings.push({ status: 'good', text: 'Payload density is within a comfortable range.' });
+    if (length > 1200) { score -= 22; findings.push({ status: 'warn', text: 'Payload is very dense. Prefer a short URL when possible.' }); }
+    else if (length > 600) { score -= 10; findings.push({ status: 'warn', text: 'Payload is moderately dense; scanning may require a larger QR.' }); }
+    else findings.push({ status: 'good', text: 'Payload density is within a comfortable range.' });
 
-    if (ec === 'L') {
-      score -= 8;
-      findings.push({ status: 'warn', text: 'Low error correction offers minimal damage tolerance.' });
-    }
-    score = Math.max(0, Math.min(100, score));
-    return { score: score, findings: findings };
+    if (ec === 'L') { score -= 8; findings.push({ status: 'warn', text: 'Low error correction offers minimal damage tolerance.' }); }
+    return { score: Math.max(0, Math.min(100, score)), findings: findings };
   }
 
   function render() {
@@ -137,21 +95,23 @@
     scoreNode.innerHTML = '<strong>' + result.score + '</strong><span>/100</span>';
     fill.style.width = result.score + '%';
     scoreNode.setAttribute('data-grade', result.score >= 85 ? 'good' : result.score >= 65 ? 'warn' : 'bad');
-    findingsNode.innerHTML = result.findings.map(function (item) {
-      return '<div class="readiness-item readiness-' + item.status + '"><span aria-hidden="true"></span><p>' + item.text + '</p></div>';
-    }).join('');
+    findingsNode.innerHTML = result.findings.map(function (item) { return '<div class="readiness-item readiness-' + item.status + '"><span aria-hidden="true"></span><p>' + item.text + '</p></div>'; }).join('');
   }
 
-  function schedule() {
-    clearTimeout(timer);
-    timer = setTimeout(render, 120);
-  }
+  function schedule() { clearTimeout(timer); timer = setTimeout(render, 120); }
 
   function loadProTools() {
     if (document.querySelector('script[data-pro-tools]')) return;
     var script = document.createElement('script');
     script.src = 'js/pro-tools.js';
     script.setAttribute('data-pro-tools', 'true');
+    script.onload = function () {
+      if (document.querySelector('script[data-pro-tools-fixes]')) return;
+      var fix = document.createElement('script');
+      fix.src = 'js/pro-tools-fixes.js';
+      fix.setAttribute('data-pro-tools-fixes', 'true');
+      document.head.appendChild(fix);
+    };
     document.head.appendChild(script);
   }
 
