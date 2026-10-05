@@ -271,3 +271,12 @@
     buildEvent: buildEvent
   };
 })(typeof window !== 'undefined' ? window : this);
+
+/* Load the optional studio workspace layer without changing the core generator bootstrap. */
+(function () {
+  if (typeof document === 'undefined' || document.querySelector('script[data-qr-studio-tools]')) return;
+  var script = document.createElement('script');
+  script.src = 'js/studio-tools.js';
+  script.setAttribute('data-qr-studio-tools', 'true');
+  document.head.appendChild(script);
+})();
