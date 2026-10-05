@@ -1,126 +1,192 @@
-# QR Code Generator
+# QR Studio
 
-A modern, responsive web application for creating **customizable QR codes** that redirect to a user-defined link or encode any text. No account required, no paid APIs — runs entirely in the browser (with optional PHP backend for saving designs).
+A modern, privacy-first web application for creating, styling, checking and exporting QR codes. Core generation runs entirely in the browser with no account and no paid API requirement. An optional PHP backend can persist generated designs.
 
 ## Features
 
-### Core
-- **URL or text input** — Encode any URL or plain text (up to 2000 characters)
-- **Instant generation** — QR code updates live as you type (no page reload)
-- **Live preview** — See changes immediately while editing content and options
+### QR content types
+Create QR codes for:
+- Website URLs
+- Plain text
+- Phone calls
+- SMS
+- WhatsApp click-to-chat with an optional pre-filled message
+- Email
+- Wi-Fi credentials
+- vCard contacts
+- Geographic coordinates
+- Calendar events
 
 ### Customization
-- **Colors** — Foreground and background (hex or color picker)
-- **Gradient** — Linear gradient for foreground with angle (0°, 45°, 90°, 135°, 180°)
-- **Size & resolution** — 128–1024 px in 32 px steps
-- **Error correction** — L, M, Q, H (higher = more durable, larger code)
-- **Corner style** — Square, extra-rounded, dot, rounded, dots, classy, classy-rounded
-- **Dot style** — Square, rounded, dots, classy, classy-rounded, extra-rounded
-- **Label** — Optional text below (or “inside” option for layout) the QR code
-- **Logo / image** — Upload an image to embed in the center
-- **Transparent background** — Toggle for PNG/SVG export
+- Foreground/background colors
+- Linear foreground gradients
+- 128–1024 px output sizing
+- Error correction levels L, M, Q and H
+- Multiple corner-square, corner-dot and data-dot styles
+- Optional text label
+- Center logo/image
+- Transparent background
+- Five quick visual presets: Classic, Indigo Flow, Ocean, Editorial and Neon Night
 
-### User experience
-- Clean, intuitive UI with clear sections
-- Mobile-friendly layout
-- Form validation for content length and URLs
-- **Reset** — Clear all fields and preview
-- **Undo** — Restore previous state (last 20 steps)
-- **Dark mode** — Toggle; respects `prefers-color-scheme` and persists in `localStorage`
+### QR Studio workspace
+- Responsive studio layout with sticky desktop preview
+- Horizontal content-mode selector on smaller screens
+- Recent local project history stored in the browser
+- Restore previously generated projects
+- Export a design configuration as JSON
+- Import a QR Studio JSON design on another browser/device
+- Keyboard shortcuts:
+  - `Ctrl/Cmd + S` — save the current project locally
+  - `Ctrl/Cmd + Enter` — generate immediately
+
+### QR readiness diagnostics
+QR Studio provides a non-authoritative readiness score using practical heuristics including:
+- foreground/background contrast;
+- output size;
+- payload density;
+- logo usage;
+- selected error correction level;
+- transparent-background risk.
+
+The score is guidance, not a guarantee that every camera/device will decode the QR. In-browser decode verification is planned separately.
+
+### Validation and payload safety
+- URL normalization and HTTP/HTTPS validation
+- Phone and WhatsApp digit-length validation
+- Email format validation
+- Latitude/longitude range checks
+- Event start/end ordering checks
+- Safer escaping for Wi-Fi, vCard and iCalendar payloads
 
 ### Export & output
-- **Download PNG** — High-quality raster image
-- **Download SVG** — Scalable vector
-- **Download PDF** — Print-ready (via jsPDF)
-- **Copy to clipboard** — Copy QR image (where Clipboard API is supported)
-- **Print** — Open print dialog with QR image
-- **Save design** (optional) — Persist design + image on server via `api/save-design.php`
+- PNG
+- SVG
+- PDF via jsPDF
+- Clipboard image copy where supported
+- Print
+- Optional server-side design persistence
+
+### User experience
+- Live preview
+- Reset and undo
+- Dark mode with persisted preference
+- Mobile-friendly responsive controls
+- Keyboard focus states and reduced-motion support
+- No authentication required for the core generator
 
 ## Technology stack
 
-- **Frontend:** HTML5, CSS3, JavaScript (vanilla, no framework)
-- **Libraries:**
-  - [qr-code-styling](https://github.com/kozakdenys/qr-code-styling) — QR generation and styling (CDN)
-  - [jsPDF](https://github.com/parallax/jsPDF) — PDF export (CDN)
-- **Optional backend:** PHP 7.4+ (for Save design API)
-- **No database required** — Save design uses file-based storage in `data/designs/`
+- **Frontend:** HTML5, CSS3 and vanilla JavaScript
+- **QR rendering:** `qr-code-styling`
+- **PDF export:** `jsPDF`
+- **Optional backend:** PHP 7.4+
+- **Persistence:** browser `localStorage` for local projects; optional file-based PHP persistence in `data/designs/`
+- **CI:** GitHub Actions on pull requests
 
-## Setup instructions
+## Setup
 
-### 1. Run locally (frontend only)
+### Frontend-only development
 
-1. Clone or copy the project into a folder (e.g. `qr_code`).
-2. Serve the folder with any HTTP server:
-   - **XAMPP:** Place under `htdocs/qr_code` and open `http://localhost/qr_code/`
-   - **PHP built-in:** From project root run `php -S localhost:8080` and open `http://localhost:8080`
-   - **Node:** e.g. `npx serve .` and open the URL shown
-3. Open `index.html` in a browser (or via the server URL).  
-   Export and preview work without a backend. **Save design** will fail until the PHP API is available.
+1. Clone the repository.
+2. Serve the project through an HTTP server:
+   - XAMPP: place under `htdocs/qr_code`
+   - PHP: `php -S localhost:8080`
+   - Node: `npx serve .`
+3. Open the served URL in a modern browser.
 
-### 2. Optional: Enable “Save design” (PHP)
+Generation, presets, local history, diagnostics and exports work without the PHP backend. The server-side **Save design** action requires PHP.
 
-1. Ensure PHP is available (e.g. XAMPP Apache + PHP).
-2. Ensure the project is served from a URL (e.g. `http://localhost/qr_code/`).
-3. Create a writable directory for saved designs:
-   ```bash
-   mkdir -p data/designs
-   chmod 755 data/designs   # or 775 if your server user is different
-   ```
-4. Call the save API from the app (button “Save design”).  
-   Designs are stored as:
-   - `data/designs/{id}.json` — design metadata and options
-   - `data/designs/{id}.png` — exported PNG (if provided)
+### Optional PHP design persistence
 
-### 3. Deploy on shared hosting
+Create a writable design directory:
 
-1. Upload the project (e.g. via FTP) to a folder under your domain (e.g. `public_html/qr_code`).
-2. Create `data/designs` and make it writable (e.g. 755 or 775).
-3. Open `https://yourdomain.com/qr_code/` (or the path you used).  
-   No database or extra extensions are required; only PHP and write access to `data/designs` for saving.
+```bash
+mkdir -p data/designs
+chmod 755 data/designs
+```
+
+Saved server designs use:
+- `data/designs/{id}.json`
+- `data/designs/{id}.png` when image data is supplied
+
+### Shared hosting
+
+Upload the project to the desired web root and ensure `data/designs/` is writable if server persistence is enabled. Static QR creation does not require a database.
 
 ## Project structure
 
-```
+```text
 qr_code/
-├── index.html          # Main app
+├── index.html
+├── AGENTS.md
 ├── css/
-│   └── styles.css      # Layout, theming, responsive, dark mode
+│   ├── styles.css
+│   ├── studio-refresh.css
+│   └── studio-tools.css
 ├── js/
-│   ├── app.js          # UI, validation, export, clipboard, reset/undo, dark mode
-│   └── qr-generator.js # QR options builder, qr-code-styling wrapper
-├── api/                 # Optional PHP backend
-│   ├── save-design.php # POST: save design + optional PNG
-│   └── get-design.php  # GET ?id=xxx: return saved design JSON
-├── data/
-│   └── designs/        # Saved designs (created by save-design.php)
+│   ├── app.js
+│   ├── content-types.js
+│   ├── qr-generator.js
+│   ├── studio-tools.js
+│   └── qr-diagnostics.js
+├── api/
+│   ├── save-design.php
+│   └── get-design.php
+├── data/designs/
+├── docs/
+│   ├── AGENT-GUIDE.md
+│   ├── ARCHITECTURE.md
+│   ├── DESIGN-SYSTEM.md
+│   ├── GIT-WORKFLOW.md
+│   └── PRODUCT-ROADMAP.md
+├── .github/workflows/ci.yml
 ├── README.md
-└── .gitignore
+└── SETUP.md
 ```
 
-## Example QR code
+## Design exchange format
 
-To generate an example QR code:
+Local JSON export uses a versioned payload:
 
-1. Open the app.
-2. In **Content**, enter: `https://example.com`
-3. Optionally set size (e.g. 300 px), colors, and corner/dot style.
-4. Use **Download PNG** or **Download SVG** to export.
+```json
+{
+  "schema": "qr-studio-design",
+  "version": 1,
+  "name": "Example project",
+  "contentType": "url",
+  "fields": {},
+  "savedAt": "2026-10-05T00:00:00.000Z"
+}
+```
 
-The same URL (`https://example.com`) is used in the README as the example target; the generated QR will point to that page.
+Future schema changes should retain compatibility or provide an explicit migration path.
+
+## Privacy
+
+Core QR generation, presets, readiness analysis and local project history operate in the browser. Local projects are not uploaded by the local-history feature. Data leaves the browser only when the user explicitly uses an external destination/service or the optional PHP save endpoint.
 
 ## Accessibility & performance
 
-- Semantic HTML and ARIA where helpful (e.g. `aria-label`, `aria-live` for messages).
-- Keyboard focus and `:focus-visible` styles.
-- `prefers-reduced-motion` respected in CSS.
-- Preview updates are debounced (~150 ms) to avoid excessive redraws while typing.
-- No external paid services; all generation and export run in the browser (except optional save).
+- Semantic HTML and ARIA where useful
+- Keyboard focus visibility
+- Responsive layouts from mobile to desktop
+- `prefers-reduced-motion` support
+- Debounced QR rendering during typing
+- Progressive enhancement: the base generator remains the primary runtime path
+
+## Documentation
+
+See:
+- `docs/DESIGN-SYSTEM.md` for visual and responsive rules
+- `docs/ARCHITECTURE.md` for module boundaries
+- `docs/GIT-WORKFLOW.md` for branching, commits and PR discipline
+- `docs/AGENT-GUIDE.md` and root `AGENTS.md` for coding-agent conventions
+- `docs/PRODUCT-ROADMAP.md` for upcoming features
 
 ## Browser support
 
-- Modern browsers with ES5+ and Canvas/SVG support (Chrome, Firefox, Safari, Edge).
-- Clipboard copy requires a secure context (HTTPS or localhost) and support for `navigator.clipboard.write` and `ClipboardItem`.
+Modern Chrome, Edge, Firefox and Safari with Canvas/SVG support. Clipboard image copy requires HTTPS/localhost and browser support for `navigator.clipboard.write` and `ClipboardItem`.
 
 ## License
 
-Use and modify freely. QR generation uses [qr-code-styling](https://github.com/kozakdenys/qr-code-styling) (MIT). jsPDF has its own license; see the library documentation.
+Use and modify freely. `qr-code-styling` is MIT licensed. jsPDF is distributed under its own license; consult the respective upstream projects for details.
