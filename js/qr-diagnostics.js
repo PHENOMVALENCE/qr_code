@@ -24,11 +24,7 @@
     var value = String(hex || '').trim().replace('#', '');
     if (value.length === 3) value = value.split('').map(function (c) { return c + c; }).join('');
     if (!/^[0-9a-f]{6}$/i.test(value)) return null;
-    return {
-      r: parseInt(value.slice(0, 2), 16),
-      g: parseInt(value.slice(2, 4), 16),
-      b: parseInt(value.slice(4, 6), 16)
-    };
+    return { r: parseInt(value.slice(0, 2), 16), g: parseInt(value.slice(2, 4), 16), b: parseInt(value.slice(4, 6), 16) };
   }
 
   function luminance(rgb) {
@@ -64,16 +60,10 @@
     var active = document.querySelector('.content-type-btn.active');
     var type = active ? active.getAttribute('data-type') : 'url';
     var map = {
-      url: ['content-url'],
-      text: ['content-text'],
-      phone: ['content-phone'],
-      sms: ['content-sms-number', 'content-sms-body'],
-      whatsapp: ['content-whatsapp-number', 'content-whatsapp-message'],
-      email: ['content-email', 'content-email-subject', 'content-email-body'],
-      wifi: ['content-wifi-ssid', 'content-wifi-pass'],
-      vcard: ['content-vcard-name', 'content-vcard-tel', 'content-vcard-email', 'content-vcard-org'],
-      location: ['content-lat', 'content-lng'],
-      event: ['content-event-title', 'content-event-start', 'content-event-end', 'content-event-location', 'content-event-desc']
+      url: ['content-url'], text: ['content-text'], phone: ['content-phone'], sms: ['content-sms-number', 'content-sms-body'],
+      whatsapp: ['content-whatsapp-number', 'content-whatsapp-message'], email: ['content-email', 'content-email-subject', 'content-email-body'],
+      wifi: ['content-wifi-ssid', 'content-wifi-pass'], vcard: ['content-vcard-name', 'content-vcard-tel', 'content-vcard-email', 'content-vcard-org'],
+      location: ['content-lat', 'content-lng'], event: ['content-event-title', 'content-event-start', 'content-event-end', 'content-event-location', 'content-event-desc']
     };
     return (map[type] || []).map(function (id) { return value(id, ''); }).join('|');
   }
@@ -81,7 +71,6 @@
   function analyse() {
     var payload = currentPayload();
     if (!payload.replace(/\|/g, '').trim()) return null;
-
     var score = 100;
     var findings = [];
     var bg = value('bg-color-text', '#ffffff');
@@ -110,16 +99,12 @@
     if (size < 192) {
       score -= 18;
       findings.push({ status: 'warn', text: 'Increase export size for more reliable scanning and print use.' });
-    } else {
-      findings.push({ status: 'good', text: 'Export size is suitable for common digital use.' });
-    }
+    } else findings.push({ status: 'good', text: 'Export size is suitable for common digital use.' });
 
     if (hasLogo && ec !== 'H') {
       score -= 18;
       findings.push({ status: 'warn', text: 'Use High (H) error correction when placing a logo in the QR.' });
-    } else if (hasLogo) {
-      findings.push({ status: 'good', text: 'High error correction is enabled for the embedded logo.' });
-    }
+    } else if (hasLogo) findings.push({ status: 'good', text: 'High error correction is enabled for the embedded logo.' });
 
     if (length > 1200) {
       score -= 22;
@@ -127,15 +112,12 @@
     } else if (length > 600) {
       score -= 10;
       findings.push({ status: 'warn', text: 'Payload is moderately dense; scanning may require a larger QR.' });
-    } else {
-      findings.push({ status: 'good', text: 'Payload density is within a comfortable range.' });
-    }
+    } else findings.push({ status: 'good', text: 'Payload density is within a comfortable range.' });
 
     if (ec === 'L') {
       score -= 8;
       findings.push({ status: 'warn', text: 'Low error correction offers minimal damage tolerance.' });
     }
-
     score = Math.max(0, Math.min(100, score));
     return { score: score, findings: findings };
   }
@@ -145,7 +127,6 @@
     var fill = document.getElementById('readiness-meter-fill');
     var findingsNode = document.getElementById('readiness-findings');
     if (!scoreNode || !fill || !findingsNode) return;
-
     var result = analyse();
     if (!result) {
       scoreNode.innerHTML = '<strong>—</strong><span>/100</span>';
@@ -153,7 +134,6 @@
       findingsNode.innerHTML = '<p>Enter QR content to review scan-readiness.</p>';
       return;
     }
-
     scoreNode.innerHTML = '<strong>' + result.score + '</strong><span>/100</span>';
     fill.style.width = result.score + '%';
     scoreNode.setAttribute('data-grade', result.score >= 85 ? 'good' : result.score >= 65 ? 'warn' : 'bad');
@@ -167,6 +147,14 @@
     timer = setTimeout(render, 120);
   }
 
+  function loadProTools() {
+    if (document.querySelector('script[data-pro-tools]')) return;
+    var script = document.createElement('script');
+    script.src = 'js/pro-tools.js';
+    script.setAttribute('data-pro-tools', 'true');
+    document.head.appendChild(script);
+  }
+
   function init() {
     injectPanel();
     document.addEventListener('input', schedule);
@@ -175,6 +163,7 @@
       if (event.target.closest && (event.target.closest('.content-type-btn') || event.target.closest('[data-preset]'))) schedule();
     });
     render();
+    loadProTools();
   }
 
   if (document.readyState === 'loading') document.addEventListener('DOMContentLoaded', init);
