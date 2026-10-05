@@ -1,7 +1,9 @@
 # Architecture
 
 ## Overview
-QR Studio is intentionally lightweight. The core product runs entirely in the browser and uses an optional PHP backend only for persisted designs. This allows the generator, preview and export workflow to remain usable on static hosting.
+QR Studio is a lightweight, static-first QR creation application. Core generation, styling, verification and export run in the browser. PHP is optional and used only for persisted designs.
+
+This split keeps the primary generator usable on static hosting, reduces data exposure and avoids forcing authentication or a database onto users who only need QR creation/export.
 
 ## Runtime layers
 
@@ -10,98 +12,144 @@ QR Studio is intentionally lightweight. The core product runs entirely in the br
 - `css/styles.css`
 - `css/studio-refresh.css`
 - `css/studio-tools.css`
+- `css/pro-tools.css`
+- `css/production-tools.css`
 
 Responsibilities:
-- semantic structure;
-- responsive layout;
-- themes and visual hierarchy;
-- form controls and export UI;
-- studio project/preset/history presentation;
-- readiness diagnostics presentation.
+- semantic application structure;
+- responsive layout and visual hierarchy;
+- theme/dark-mode presentation;
+- creator workspace, templates, presets and local projects;
+- QR readiness and verification UI;
+- frame/CTA controls;
+- batch-generation UI;
+- install/share/offline UX.
 
-### Application orchestration
+### Core application orchestration
 - `js/app.js`
 
 Responsibilities:
-- DOM references;
-- event binding;
-- state collection;
-- undo state;
-- logo upload state;
+- DOM references and event binding;
+- core state collection;
+- undo history;
+- logo data lifecycle;
 - QR refresh lifecycle;
-- export/copy/print actions;
-- optional design persistence calls;
+- PNG/SVG/PDF, clipboard and print actions;
+- optional server design persistence;
 - dark mode.
-
-### Studio workspace tools
-- `js/studio-tools.js`
-
-Responsibilities:
-- progressive enhancement of the core generator;
-- WhatsApp content-mode UI;
-- curated visual presets;
-- local project history using `localStorage`;
-- JSON design import/export;
-- keyboard shortcuts;
-- restore/apply design snapshots;
-- bootstrap quality diagnostics.
-
-This module is intentionally independent of the QR renderer. It operates through stable DOM controls and the existing Generate action so the core application remains usable if the studio layer fails to load.
-
-### Quality diagnostics
-- `js/qr-diagnostics.js`
-
-Responsibilities:
-- estimate color contrast;
-- check export size;
-- warn about dense payloads;
-- recommend suitable error correction when a logo is used;
-- provide a non-authoritative QR readiness score.
-
-The readiness score is a heuristic and must not be presented as proof that a QR will scan on every device. Actual encode/decode verification remains a separate planned feature.
 
 ### Payload/domain formatting
 - `js/content-types.js`
 
 Responsibilities:
-- convert user input into standards-compatible QR payload strings;
-- URL, text, phone, SMS, WhatsApp, email, Wi-Fi, vCard, location and event formats;
-- normalize URLs and WhatsApp click-to-chat links;
-- validate phone/email/location/event input;
-- escape special characters for Wi-Fi, vCard and iCalendar payloads.
+- URL, text, phone, SMS, WhatsApp, email, Wi-Fi, vCard, location and event payloads;
+- standards-oriented escaping/normalization;
+- field validation and payload-length safety limits;
+- bootstrap the progressive studio layer.
 
-New QR content types should be implemented here rather than assembled directly inside UI event handlers.
+New QR payload formats belong here rather than in click handlers.
 
 ### QR rendering adapter
 - `js/qr-generator.js`
 
 Responsibilities:
-- map application options to `qr-code-styling`;
-- create/update QR render instances;
-- centralize third-party library-specific configuration.
+- translate normalized application state into `qr-code-styling` options;
+- create/update QR renderer instances;
+- isolate third-party renderer configuration.
+
+### Studio workspace
+- `js/studio-tools.js`
+
+Responsibilities:
+- WhatsApp mode UI;
+- visual presets;
+- local project history;
+- versioned JSON import/export;
+- keyboard shortcuts;
+- design snapshot restore;
+- bootstrap diagnostics.
+
+### Quality diagnostics
+- `js/qr-diagnostics.js`
+
+Responsibilities:
+- contrast heuristic;
+- output-size guidance;
+- payload-density guidance;
+- logo/error-correction recommendations;
+- QR readiness score;
+- bootstrap professional tools.
+
+The score is advisory; actual decoding is handled separately.
+
+### Professional creator tools
+- `js/pro-tools.js`
+- `js/pro-tools-fixes.js`
+
+Responsibilities:
+- logo size and clear-space controls;
+- logo MIME/file-size validation;
+- frame/CTA preview and framed PNG export;
+- local-project rename/delete;
+- `jsQR` encode/decode verification;
+- PWA bootstrap;
+- compatibility around progressive history rendering;
+- bootstrap the final production layer.
+
+### Production tools
+- `js/production-tools.js`
+- `js/share-target.js`
+
+Responsibilities:
+- purpose-built QR templates;
+- CSV batch parsing and ZIP generation via `JSZip`;
+- logo pixel-dimension validation;
+- Web Share and install-prompt UX;
+- online/offline status;
+- application health check (`window.QRStudioHealth`);
+- Web Share Target intake for links/text shared into the installed app.
+
+### PWA/runtime resilience
+- `manifest.webmanifest`
+- `sw.js`
+- `assets/qr-studio-icon.svg`
+
+Responsibilities:
+- installability metadata;
+- application identity/icon;
+- offline application shell;
+- critical runtime dependency caching;
+- stale cache cleanup;
+- navigation fallback when offline.
 
 ### Optional persistence API
 - `api/save-design.php`
 - `api/get-design.php`
-- `data/designs/`
+- `data/designs/.htaccess`
 
 Responsibilities:
-- persist/retrieve design metadata;
-- optionally persist generated image data;
-- keep backend requirements optional for the core product.
+- save/retrieve explicit user-requested design metadata;
+- optional PNG preview storage;
+- bounded request/image handling;
+- strict design identifiers;
+- protected storage directory.
 
-## Third-party runtime dependencies
-Current browser dependencies are CDN-loaded:
-- `qr-code-styling`
-- `jsPDF`
-- Google Fonts / DM Sans
+The backend is not required for local history, JSON import/export, generation or export.
 
-Future production hardening may pin/integrity-check assets or vendor critical dependencies where appropriate.
+## Third-party browser dependencies
+Pinned runtime dependencies currently include:
+- `qr-code-styling@1.6.0-rc.1` — QR renderer;
+- `jsPDF@2.5.1` — PDF export;
+- `jsQR@1.4.0` — decode verification;
+- `JSZip@3.10.1` — batch ZIP export;
+- DM Sans via Google Fonts (non-critical; system font fallback remains available).
+
+Critical QR dependencies are cached by the service worker after installation/first availability for repeat offline use.
 
 ## State model
-The core application still uses DOM-backed state plus small in-memory state such as the active QR instance, uploaded logo and undo history.
+The legacy generator uses DOM-backed state plus small in-memory values such as the active QR instance, uploaded logo and undo history.
 
-The studio enhancement serializes a controlled set of DOM fields into a versioned snapshot:
+Studio project state is serialized into a controlled versioned snapshot:
 
 ```json
 {
@@ -114,43 +162,72 @@ The studio enhancement serializes a controlled set of DOM fields into a versione
 }
 ```
 
-This format backs local history and JSON exchange. Future schema changes must preserve backwards compatibility or provide an explicit migration path.
+The format backs local history and JSON exchange. Schema changes must preserve backwards compatibility or introduce an explicit migration.
 
-## Preferred future modularization
-As complexity grows, the current studio module can be split further into:
-- `js/design-state.js` — normalized design serialization;
-- `js/presets.js` — curated style templates;
-- `js/history.js` — local project/history store;
-- `js/import-export.js` — JSON design exchange;
-- `js/batch.js` — CSV parsing and batch QR jobs;
-- `js/verification.js` — in-browser decode verification.
-
-This modularization should happen incrementally, not as a full rewrite.
-
-## Progressive enhancement rule
-The base generator must remain functional without studio-specific JavaScript or the optional PHP API. Studio functionality should enhance, not replace, the core QR generation path.
-
-## Dynamic QR architecture — later phase
-Dynamic QR codes require a server-managed redirect identifier rather than direct destination encoding.
+## Batch architecture
+Batch input is intentionally client-side:
 
 ```text
-QR payload -> https://qr.example.com/r/{slug}
-             -> redirect service
-             -> current target URL
-             -> analytics event
+CSV -> parser -> payload builder -> QRCodeStyling -> PNG blob -> JSZip -> ZIP download
 ```
 
-That later architecture will require authenticated management, storage, redirect safety, analytics privacy decisions and operational monitoring. It should remain separate from the static generator until intentionally introduced.
+Production limits:
+- maximum 100 records per batch;
+- maximum uploaded CSV size 1 MB;
+- supported batch types: URL, text, phone, WhatsApp and email;
+- no batch data is sent to the persistence API.
+
+## Security boundaries
+- Root `.htaccess` supplies browser security headers on Apache deployments.
+- `data/designs/.htaccess` blocks direct persisted-file access.
+- PHP endpoints validate request method, content size, identifiers, option keys and PNG signatures.
+- The app does not proxy arbitrary URLs or fetch user-supplied remote files server-side.
+- Browser-local projects remain local unless the user explicitly exports or invokes the optional save API.
+
+## Testing architecture
+### Unit
+`tests/content-types.test.js` covers every payload builder and major validation branch.
+
+### Browser
+`tests/e2e/qr-studio.spec.js` uses Playwright/Chromium for:
+- full production workspace boot;
+- QR generation;
+- templates;
+- local project persistence;
+- batch UI;
+- page-level responsive overflow checks at 320, 375, 768, 1024 and 1440 px.
+
+### CI
+PR CI performs:
+- required-file validation;
+- JavaScript syntax checks;
+- PHP linting;
+- manifest JSON validation;
+- unit tests;
+- production-asset reference checks;
+- static server smoke tests;
+- Playwright browser/responsive QA.
+
+## Progressive enhancement rule
+The base generator must remain functional even if optional studio/pro/production enhancement modules fail to load. Enhancements should layer on stable controls rather than replacing the core QR generation path.
+
+## Separate SaaS architecture
+Dynamic QR redirects, analytics, expiration policies, hosted files, protected destinations, event-ticket validation and cloud team workspaces are not implemented inside this static-first architecture. They require authenticated persistent infrastructure, abuse controls, privacy/retention policy and monitoring.
+
+Conceptually:
+
+```text
+QR -> managed redirect slug -> policy/auth checks -> analytics event -> destination
+```
+
+That system should be deployed as a separate backend product/API rather than weakening the static generator's privacy/security model.
 
 ## Non-functional requirements
-- Core QR generation works without login.
-- Static generation continues without PHP.
-- Responsive from narrow mobile to desktop.
-- Accessible keyboard workflow.
-- Safe file/payload handling.
-- QR styling must not silently compromise practical scanability.
-- Export must be deterministic enough for professional use.
-- Local project data remains browser-local unless the user explicitly exports or uses the optional backend.
-
-## Architectural decision rule
-Before adding a dependency or framework, ask whether it materially improves maintainability, testing or product capability. Do not migrate the existing stack solely for novelty.
+- QR generation works without login.
+- Static generation works without PHP.
+- Responsive from 320 px through desktop widths.
+- Keyboard-accessible editing workflow.
+- Safe bounded file/payload handling.
+- QR styling includes quality warnings and decode verification.
+- Local project data is browser-local by default.
+- HTTPS is required for production PWA/service-worker behavior.
