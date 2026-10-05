@@ -35,6 +35,7 @@ jobs:
             css/studio-refresh.css
             css/studio-tools.css
             css/pro-tools.css
+            css/production-tools.css
             js/app.js
             js/content-types.js
             js/qr-generator.js
@@ -42,12 +43,19 @@ jobs:
             js/qr-diagnostics.js
             js/pro-tools.js
             js/pro-tools-fixes.js
+            js/production-tools.js
+            js/share-target.js
             manifest.webmanifest
             sw.js
             assets/qr-studio-icon.svg
             tests/content-types.test.js
+            tests/e2e/qr-studio.spec.js
+            playwright.config.js
+            package.json
             api/save-design.php
             api/get-design.php
+            .htaccess
+            data/designs/.htaccess
             README.md
             AGENTS.md
             docs/ARCHITECTURE.md
@@ -68,8 +76,12 @@ jobs:
           node --check js/qr-diagnostics.js
           node --check js/pro-tools.js
           node --check js/pro-tools-fixes.js
+          node --check js/production-tools.js
+          node --check js/share-target.js
           node --check sw.js
+          node --check playwright.config.js
           node --check tests/content-types.test.js
+          node --check tests/e2e/qr-studio.spec.js
 
       - name: Validate manifest JSON
         run: node -e "JSON.parse(require('fs').readFileSync('manifest.webmanifest','utf8')); console.log('manifest valid')"
@@ -95,8 +107,13 @@ jobs:
           grep -q 'qr-diagnostics.js' js/studio-tools.js
           grep -q 'pro-tools.js' js/qr-diagnostics.js
           grep -q 'pro-tools-fixes.js' js/qr-diagnostics.js
+          grep -q 'production-tools.js' js/pro-tools-fixes.js
+          grep -q 'share-target.js' js/pro-tools-fixes.js
           grep -q 'manifest.webmanifest' js/pro-tools.js
           grep -q 'sw.js' js/pro-tools.js
+          grep -q 'production-tools.css' sw.js
+          grep -q 'production-tools.js' sw.js
+          grep -q 'share-target.js' sw.js
 
       - name: Static server smoke test
         shell: bash
@@ -108,6 +125,21 @@ jobs:
           sleep 1
           curl --fail --silent --show-error http://127.0.0.1:8080/ >/tmp/index.html
           grep -q 'QR Code Generator' /tmp/index.html
-          for asset in js/studio-tools.js js/qr-diagnostics.js js/pro-tools.js js/pro-tools-fixes.js css/pro-tools.css manifest.webmanifest sw.js assets/qr-studio-icon.svg; do
+          for asset in js/studio-tools.js js/qr-diagnostics.js js/pro-tools.js js/pro-tools-fixes.js js/production-tools.js js/share-target.js css/pro-tools.css css/production-tools.css manifest.webmanifest sw.js assets/qr-studio-icon.svg; do
             curl --fail --silent --show-error "http://127.0.0.1:8080/$asset" >/dev/null
           done
+
+      - name: Install browser test dependencies
+        run: |
+          npm install --no-audit --no-fund
+          npx playwright install --with-deps chromium
+
+      - name: Run browser and responsive QA
+        shell: bash
+        run: |
+          set -euo pipefail
+          php -S 127.0.0.1:8080 >/tmp/qr-studio-e2e-server.log 2>&1 &
+          SERVER_PID=$!
+          trap 'kill $SERVER_PID' EXIT
+          sleep 1
+          npm run test:e2e
