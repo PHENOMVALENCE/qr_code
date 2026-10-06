@@ -7,6 +7,50 @@ async function waitForStudio(page) {
   await expect(page.locator('#batch-studio')).toBeVisible();
 }
 
+async function expectNoPageOverflow(page) {
+  const dimensions = await page.evaluate(() => ({
+    scrollWidth: document.documentElement.scrollWidth,
+    clientWidth: document.documentElement.clientWidth,
+    bodyScrollWidth: document.body.scrollWidth
+  }));
+  expect(dimensions.scrollWidth).toBeLessThanOrEqual(dimensions.clientWidth + 2);
+  expect(dimensions.bodyScrollWidth).toBeLessThanOrEqual(dimensions.clientWidth + 2);
+}
+
+async function expectKeySurfacesInsideViewport(page) {
+  const result = await page.evaluate(() => {
+    const width = document.documentElement.clientWidth;
+    const selectors = [
+      '.header',
+      '.section-input',
+      '.panel-preview',
+      '.panel-customize',
+      '#template-library',
+      '#studio-tools',
+      '#batch-studio'
+    ];
+    return selectors.map(selector => {
+      const node = document.querySelector(selector);
+      if (!node) return { selector, present: false };
+      const rect = node.getBoundingClientRect();
+      return {
+        selector,
+        present: true,
+        left: rect.left,
+        right: rect.right,
+        width: rect.width,
+        viewport: width
+      };
+    });
+  });
+
+  for (const item of result) {
+    expect(item.present, `${item.selector} should exist`).toBe(true);
+    expect(item.left, `${item.selector} should not escape left edge`).toBeGreaterThanOrEqual(-2);
+    expect(item.right, `${item.selector} should not escape right edge`).toBeLessThanOrEqual(item.viewport + 2);
+  }
+}
+
 test('loads complete QR Studio production workspace', async ({ page }) => {
   await waitForStudio(page);
   await expect(page).toHaveTitle(/QR Code Generator/i);
@@ -94,14 +138,53 @@ test('batch generation creates a ZIP download', async ({ page }) => {
   await expect(page.locator('#batch-status')).toContainText('Batch complete');
 });
 
-for (const width of [320, 375, 768, 1024, 1440]) {
+for (const width of [280, 320, 340, 360, 375, 390, 412, 430, 600, 768, 1024, 1440]) {
   test(`responsive layout has no page-level horizontal overflow at ${width}px`, async ({ page }) => {
     await page.setViewportSize({ width, height: 900 });
     await waitForStudio(page);
-    const dimensions = await page.evaluate(() => ({
-      scrollWidth: document.documentElement.scrollWidth,
-      clientWidth: document.documentElement.clientWidth
-    }));
-    expect(dimensions.scrollWidth).toBeLessThanOrEqual(dimensions.clientWidth + 2);
+    await expectNoPageOverflow(page);
+    await expectKeySurfacesInsideViewport(page);
   });
 }
+
+for (const width of [280, 320, 360, 375, 390, 412, 430]) {
+  test(`generated QR and framed preview stay inside small viewport at ${width}px`, async ({ page }) => {
+    await page.setViewportSize({ width, height: 780 });
+    await waitForStudio(page);
+    await page.locator('#content-url').fill('https://example.com/mobile-responsive-test?source=qr-studio');
+    await page.locator('#generate-btn').click();
+    await expect(page.locator('#qr-container canvas, #qr-container svg').first()).toBeVisible();
+    await page.locator('#frame-style').selectOption('website');
+    await expectNoPageOverflow(page);
+
+    const preview = await page.locator('#preview-wrap').boundingBox();
+    const qr = await page.locator('#qr-container canvas, #qr-container svg').first().boundingBox();
+    expect(preview).toBeTruthy();
+    expect(qr).toBeTruthy();
+    expect(preview.width).toBeLessThanOrEqual(width);
+    expect(qr.width).toBeLessThanOrEqual(preview.width);
+  });
+}
+
+test('mobile form controls avoid iOS auto-zoom sizing', async ({ page }) => {
+  await page.setViewportSize({ width: 320, height: 780 });
+  await waitForStudio(page);
+  const sizes = await page.evaluate(() => {
+    const selectors = ['#content-url', '#qr-size', '#qr-ec', '#label-text'];
+    return selectors.map(selector => ({ selector, size: parseFloat(getComputedStyle(document.querySelector(selector)).fontSize) }));
+  });
+  for (const item of sizes) expect(item.size, `${item.selector} should use at least 16px text on mobile`).toBeGreaterThanOrEqual(16);
+});
+
+test('primary mobile actions remain touch-friendly', async ({ page }) => {
+  await page.setViewportSize({ width: 320, height: 780 });
+  await waitForStudio(page);
+  const heights = await page.evaluate(() => {
+    const selectors = ['#generate-btn', '#reset-btn', '#undo-btn', '#share-qr-btn', '#export-png'];
+    return selectors.map(selector => {
+      const node = document.querySelector(selector);
+      return { selector, height: node ? node.getBoundingClientRect().height : 0 };
+    });
+  });
+  for (const item of heights) expect(item.height, `${item.selector} should be touch-friendly`).toBeGreaterThanOrEqual(42);
+});
