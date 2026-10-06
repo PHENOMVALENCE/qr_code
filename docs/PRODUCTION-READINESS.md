@@ -41,7 +41,42 @@ npx playwright install chromium
 npm run test:e2e
 ```
 
-The PR CI performs syntax checks, PHP linting, manifest validation, payload tests, asset smoke tests, browser workflows and responsive checks at 320, 375, 768, 1024 and 1440 px.
+The PR CI performs syntax checks, PHP linting, manifest validation, payload tests, asset smoke tests, browser workflows and responsive checks.
+
+### Responsive QA
+The automated browser suite now validates the production workspace at:
+- 280 px
+- 320 px
+- 340 px
+- 360 px
+- 375 px
+- 390 px
+- 412 px
+- 430 px
+- 600 px
+- 768 px
+- 1024 px
+- 1440 px
+
+The release must have no page-level horizontal overflow at these widths. Tests also verify that header, content, preview, customization, template, project and batch surfaces remain inside the viewport.
+
+For narrow phones, the suite additionally verifies:
+- generated QR output stays inside the preview;
+- framed QR output does not widen the page;
+- primary mobile actions remain touch-friendly;
+- key form fields use at least 16px text to avoid iOS Safari focus zoom.
+
+Manual responsive checks should also cover:
+- horizontal content-type scrolling;
+- horizontal preset scrolling;
+- long URLs and long project names;
+- file-input presentation;
+- gradient/color controls;
+- export controls;
+- history rename/delete actions;
+- batch CSV/code samples;
+- dark mode;
+- landscape orientation on a phone.
 
 ### PWA QA
 - Load the site once online and confirm the service worker reaches the `activated` state.
@@ -81,6 +116,8 @@ The current product intentionally does not provide dynamic QR redirection, scan 
 A production release should only be merged when:
 1. PR CI is green.
 2. No unresolved browser-test regressions remain.
-3. The production domain is HTTPS.
-4. Security headers are verified in the deployed environment.
-5. At least one real-device scan test passes for plain and logo-based QR codes.
+3. No supported viewport has page-level horizontal overflow.
+4. Generated/framed QR output remains fully visible on narrow phones.
+5. The production domain is HTTPS.
+6. Security headers are verified in the deployed environment.
+7. At least one real-device scan test passes for plain and logo-based QR codes.
