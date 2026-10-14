@@ -1,0 +1,76 @@
+name: PR CI and Auto Merge
+on:
+  pull_request:
+    types: [opened, reopened, synchronize, ready_for_review]
+concurrency:
+  group: pr-${{ github.event.pull_request.number }}
+  cancel-in-progress: true
+jobs:
+  quality:
+    name: Test PR
+    if: github.event.pull_request.draft == false
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    permissions:
+      contents: read
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+      - uses: shivammathur/setup-php@v2
+        with:
+          php-version: '8.2'
+          coverage: none
+      - name: Run project checks
+        shell: bash
+        run: |
+          set -euo pipefail
+          CHECKED=0
+          mapfile -t NODE_DIRS < <(find . -maxdepth 3 -name package.json -not -path '*/node_modules/*' -printf '%h\n' | sort -u)
+          for DIR in "${NODE_DIRS[@]}"; do CHECKED=1; pushd "$DIR" >/dev/null; if [ -f package-lock.json ]; then npm ci; else npm install; fi; for SCRIPT in typecheck lint test build; do if node -e "const p=require('./package.json'); process.exit(p.scripts && p.scripts['$SCRIPT'] ? 0 : 1)"; then if [ "$SCRIPT" = "test" ] && node -e "const p=require('./package.json'); process.exit((p.scripts.test || '').includes('no test specified') ? 0 : 1)"; then echo "Skipping placeholder test script"; else npm run "$SCRIPT"; fi; fi; done; popd >/dev/null; done
+          mapfile -t PHP_DIRS < <(find . -maxdepth 3 -name composer.json -not -path '*/vendor/*' -printf '%h\n' | sort -u)
+          for DIR in "${PHP_DIRS[@]}"; do CHECKED=1; pushd "$DIR" >/dev/null; composer validate --no-check-publish; composer install --prefer-dist --no-interaction --no-progress; find . -type f -name '*.php' -not -path './vendor/*' -print0 | xargs -0 -r -n1 -P4 php -l >/dev/null; if [ -f artisan ]; then [ -f .env ] || { [ -f .env.example ] && cp .env.example .env || true; }; php artisan key:generate --force || true; mkdir -p database; touch database/database.sqlite; APP_ENV=testing DB_CONNECTION=sqlite DB_DATABASE="$PWD/database/database.sqlite" php artisan test; elif [ -x vendor/bin/phpunit ]; then vendor/bin/phpunit; fi; popd >/dev/null; done
+          if [ "$CHECKED" -eq 0 ] && find . -type f -name '*.php' -print -quit | grep -q .; then find . -type f -name '*.php' -print0 | xargs -0 -r -n1 -P4 php -l >/dev/null; fi
+  reconcile:
+    name: Resolve merge conflicts
+    needs: quality
+    if: needs.quality.result == 'success' && github.event.pull_request.draft == false && github.event.pull_request.head.repo.full_name == github.repository
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+      pull-requests: write
+    outputs:
+      branch_updated: ${{ steps.reconcile.outputs.branch_updated }}
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: ${{ github.event.pull_request.head.ref }}
+          fetch-depth: 0
+      - id: reconcile
+        shell: bash
+        env:
+          BASE_REF: ${{ github.event.pull_request.base.ref }}
+          HEAD_REF: ${{ github.event.pull_request.head.ref }}
+        run: |
+          set -euo pipefail
+          git config user.name "github-actions[bot]"; git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git fetch origin "$BASE_REF" "$HEAD_REF"; BEFORE_SHA="$(git rev-parse HEAD)"
+          set +e; git merge "origin/$BASE_REF" --no-edit; MERGE_EXIT=$?; set -e
+          if [ "$MERGE_EXIT" -ne 0 ]; then CONFLICTED_FILES="$(git diff --name-only --diff-filter=U)"; [ -n "$CONFLICTED_FILES" ] || { git merge --abort || true; exit 1; }; while IFS= read -r FILE; do [ -z "$FILE" ] || git checkout --ours -- "$FILE" 2>/dev/null || true; done <<< "$CONFLICTED_FILES"; git add -A; git commit --no-edit; fi
+          AFTER_SHA="$(git rev-parse HEAD)"; if [ "$BEFORE_SHA" != "$AFTER_SHA" ]; then git push origin "HEAD:$HEAD_REF"; echo "branch_updated=true" >> "$GITHUB_OUTPUT"; else echo "branch_updated=false" >> "$GITHUB_OUTPUT"; fi
+  merge:
+    name: Merge PR
+    needs: [quality, reconcile]
+    if: always() && needs.quality.result == 'success' && needs.reconcile.result == 'success' && needs.reconcile.outputs.branch_updated == 'false' && github.event.pull_request.draft == false
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+      pull-requests: write
+    steps:
+      - env:
+          GH_TOKEN: ${{ github.token }}
+          REPOSITORY: ${{ github.repository }}
+          PR_NUMBER: ${{ github.event.pull_request.number }}
+          EXPECTED_HEAD_SHA: ${{ github.event.pull_request.head.sha }}
+        run: gh api --method PUT -H "Accept: application/vnd.github+json" "repos/$REPOSITORY/pulls/$PR_NUMBER/merge" -f merge_method=merge -f sha="$EXPECTED_HEAD_SHA" --jq 'if .merged == true then .message else error(.message) end'
