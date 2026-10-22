@@ -22,8 +22,11 @@ jobs:
       - name: Set up PHP
         uses: shivammathur/setup-php@v2
         with:
-          php-version: '8.2'
+          php-version: '8.4'
           coverage: none
+
+      - name: Show PHP version
+        run: php -v
 
       - name: Verify required files
         shell: bash
